@@ -1,0 +1,9 @@
+version: 1.0
+description: Image Reader
+command: ./imgreader.py
+args:
+  directory:
+    type: string
+
+redis:
+  topic: imgreader
