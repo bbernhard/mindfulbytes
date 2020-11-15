@@ -1,0 +1,15 @@
+version: 1.0
+name: imgreader-fs
+description: Filesystem Image Reader
+command: ./imgreader.py
+
+crawl-args:
+  directory:
+    type: string
+    format: long  
+
+topics:
+  - imgreader
+
+redis:
+  topic: imgreader

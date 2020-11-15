@@ -26,6 +26,21 @@ var MindfulBytesApi = (function() {
 		return this.baseUrl + "/" + this.apiVersion + "/plugins/" + name + "/images/" + imageId;
 	}
 
+	MindfulBytesApi.prototype.getDataForFullDate = function(name, fullDate) {
+		var inst = this;
+		return new Promise(function(resolve, reject) {
+			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/fulldates/" + fullDate;
+			var xhr = new XMLHttpRequest();
+			xhr.responseType = "json";
+			xhr.open("GET", url);
+			xhr.onload = function() {
+				resolve({statusCode: xhr.status, response: xhr.response});
+			}
+			xhr.onerror = reject;
+			xhr.send();
+		});
+    }
+
 	MindfulBytesApi.prototype.getDataForDate = function(name, date) {
 		var inst = this;
 		return new Promise(function(resolve, reject) {
@@ -41,25 +56,26 @@ var MindfulBytesApi = (function() {
 		});
     }
 
-	MindfulBytesApi.prototype.getDataForDay = function(name, day) {
+	MindfulBytesApi.prototype.getDates = function(name) {
 		var inst = this;
 		return new Promise(function(resolve, reject) {
-			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/days/" + day;
+			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/dates/";
 			var xhr = new XMLHttpRequest();
 			xhr.responseType = "json";
 			xhr.open("GET", url);
 			xhr.onload = function() {
-				resolve({statusCode: xhr.status, response: xhr.response});
+				var jsonResponse = xhr.response;
+				resolve(jsonResponse);
 			}
 			xhr.onerror = reject;
 			xhr.send();
 		});
     }
 
-	MindfulBytesApi.prototype.getDates = function(name) {
+	MindfulBytesApi.prototype.getFullDates = function(name) {
 		var inst = this;
 		return new Promise(function(resolve, reject) {
-			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/dates/";
+			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/fulldates/";
 			var xhr = new XMLHttpRequest();
 			xhr.responseType = "json";
 			xhr.open("GET", url);

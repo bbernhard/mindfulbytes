@@ -1,46 +1,19 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/gomodule/redigo/redis"
 	"flag"
+	"github.com/bbernhard/mindfulbytes/utils"
+	"github.com/gomodule/redigo/redis"
+	log "github.com/sirupsen/logrus"
 )
-
-
-/*func execPlugin(command string, args []string, baseDir string) error {
-	log.Info(args)
-	cmd := exec.Command(command, args...)
-	cmd.Dir = baseDir
-	cmd.Env = os.Environ()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Start()
-	
-	if err != nil {
-		return err
-	}
-
-	// Wait for the process to finish
-	done := make(chan error, 1)
-	go func() {
-		done <- cmd.Wait()
-	}()
-	select {
-	case err := <-done:
-		return err
-	}
-
-	return nil
-}*/
-
 
 func main() {
 	log.Info("Starting Plugin Runner")
-	
+
 	configDir := flag.String("config-dir", "../config/", "Config Directory")
 	redisAddress := flag.String("redis-address", ":6379", "Address to the Redis server")
 	redisMaxConnections := flag.Int("redis-max-connections", 500, "Max connections to Redis")
-	
+
 	flag.Parse()
 
 	log.SetLevel(log.DebugLevel)
@@ -89,15 +62,16 @@ func main() {
 		}
 	}()
 
-	plugins, err := loadPlugins("./plugins/", *configDir)
+	plugins := utils.NewPlugins("./plugins/", *configDir)
+	err := plugins.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-
-	err = execPlugin(plugins[0].MetaData.Command, plugins[0].MetaData.CommandArgs, plugins[0].MetaData.Directory)
-	if err != nil {
-		log.Fatal(err)
+	for _, plugin := range plugins.GetPlugins() {
+		err = plugins.ExecCrawl(plugin.Exec.CrawlExec)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-
 }

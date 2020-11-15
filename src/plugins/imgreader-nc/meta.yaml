@@ -1,0 +1,28 @@
+version: 1.0
+name: imgreader-nc
+description: Nextcloud Image Reader
+command: ./main
+crawl-args:
+  nextcloud-webdav-url:
+    type: string
+    format: short
+  nextcloud-token:
+    type: string
+    format: short
+  nextcloud-root-dir:
+    type: string
+    format: short
+
+fetch-args:
+  nextcloud-webdav-url:
+    type: string
+    format: short
+  nextcloud-token:
+    type: string
+    format: short
+
+topics:
+  - imgreader
+
+redis:
+  topic: nextcloud-imagereader
