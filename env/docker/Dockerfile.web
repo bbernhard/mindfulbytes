@@ -1,0 +1,27 @@
+FROM golang:1.15-buster
+
+RUN useradd -ms /bin/bash mindfulbytes
+
+RUN wget https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait --directory-prefix=/usr/bin \
+	&& chmod u+rx /usr/bin/wait
+
+RUN apt-get update && apt-get install -y git
+
+RUN git clone https://github.com/ImageMagick/ImageMagick.git /tmp/ImageMagick \
+	&& cd /tmp/ImageMagick && git checkout 7.0.10-39 && ./configure && make && make install 
+
+RUN mkdir -p /home/mindfulbytes/bin
+
+COPY src/ /home/mindfulbytes/src
+COPY js   /home/mindfulbytes/js
+COPY html  /home/mindfulbytes/html
+COPY css /home/mindfulbytes/css
+COPY env/docker/entrypoint_web.sh /home/mindfulbytes/bin/entrypoint_web.sh
+
+RUN cd /home/mindfulbytes/src && go build web.go && mv web /home/mindfulbytes/bin 
+
+#USER mindfulbytes
+
+WORKDIR /home/mindfulbytes/bin
+
+ENTRYPOINT ["/home/mindfulbytes/bin/entrypoint_web.sh"]

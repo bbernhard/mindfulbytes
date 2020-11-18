@@ -1,0 +1,19 @@
+FROM golang:1.15-buster
+
+RUN useradd -ms /bin/bash mindfulbytes
+
+RUN mkdir -p /home/mindfulbytes/bin
+
+RUN wget https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait --directory-prefix=/usr/bin \
+	&& chmod u+rx /usr/bin/wait
+
+COPY src/ /home/mindfulbytes/src
+COPY env/docker/entrypoint_notifier.sh /home/mindfulbytes/bin/entrypoint_notifier.sh
+
+RUN cd /home/mindfulbytes/src && go build notifier.go && mv web /home/mindfulbytes/bin 
+
+#USER mindfulbytes
+
+WORKDIR /home/mindfulbytes/bin
+
+ENTRYPOINT ["/home/mindfulbytes/bin/entrypoint_notifier.sh"]

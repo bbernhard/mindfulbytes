@@ -1,0 +1,34 @@
+FROM golang:1.15-buster
+
+RUN useradd -ms /bin/bash mindfulbytes
+
+RUN mkdir -p /home/mindfulbytes/bin
+
+RUN apt-get update && apt-get install -y python3 python3-pip
+
+RUN pip3 install Pillow redis
+
+RUN wget https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait --directory-prefix=/usr/bin \
+	&& chmod u+rx /usr/bin/wait
+
+COPY src/ /home/mindfulbytes/src
+COPY env/docker/entrypoint_pluginrunner.sh /home/mindfulbytes/bin/entrypoint_pluginrunner.sh
+
+RUN mkdir -p /home/mindfulbytes/bin/plugins
+
+RUN cd /home/mindfulbytes/src && go build pluginrunner.go && mv pluginrunner /home/mindfulbytes/bin 
+
+#TODO make recursive!!!!!!
+
+RUN cp -r /home/mindfulbytes/src/plugins/imgreader-nc /home/mindfulbytes/bin/plugins/imgreader-nc
+RUN cd /home/mindfulbytes/src/plugins/imgreader-nc/ && go build main.go 
+
+RUN cp -r /home/mindfulbytes/src/plugins/imgreader-fs /home/mindfulbytes/bin/plugins/imgreader-fs
+
+
+
+#USER mindfulbytes
+
+WORKDIR /home/mindfulbytes/bin
+
+ENTRYPOINT ["/home/mindfulbytes/bin/entrypoint_pluginrunner.sh"]
