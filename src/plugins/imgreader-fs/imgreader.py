@@ -19,9 +19,37 @@ EXTENSIONS = {'.jpg', '.png', 'jpeg'}
 
 TOPIC = "imgreader-fs"
 
+
+def get_redis_host():
+    redis_address = os.getenv("REDIS_ADDRESS")
+    if redis_address is None:
+        return "localhost"
+    
+    redis_address = redis_address.split(":")
+    if len(redis_address) != 2:
+        print("Invalid Redis Address:%s" %redis_address, file=sys.stderr)
+        sys.exit(1)
+    return redis_address[0]
+
+def get_redis_port():
+    redis_address = os.getenv("REDIS_ADDRESS")
+    if redis_address is None:
+        return 6379
+    
+    redis_address = redis_address.split(":")
+    if len(redis_address) != 2:
+        print("Invalid Redis Address:%s" %redis_address, file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        return int(redis_address[1])
+    except:
+        print("Invalid Redis Address:%s" %redis_address, file=sys.stderr)
+        sys.exit(1)
+
 def fetch(id, destination):
     try:
-        redis_client = redis.Redis(host='localhost', port=6379, db=0)
+        redis_client = redis.Redis(host=get_redis_host(), port=get_redis_port(), db=0)
         res = redis_client.get(TOPIC+":image:"+id)
         filename = res.decode("utf-8")
         shutil.copyfile(filename, destination)
@@ -35,7 +63,7 @@ def crawl(directory):
         print("%s doesn't exist!" %directory)
         sys.exit(1)
 
-    redis_client = redis.Redis(host='localhost', port=6379, db=0)
+    redis_client = redis.Redis(host=get_redis_host(), port=get_redis_port(), db=0)
 
     print("Delete existing entries")
     keys_to_delete = redis_client.keys(TOPIC+":*")
@@ -50,8 +78,8 @@ def crawl(directory):
 
             try:
                 img = Image.open(filename)
-            except OSError:
-                pass 
+            except:
+                continue
             exif_data = img._getexif()
             if exif_data is not None:
                 try:

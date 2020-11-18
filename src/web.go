@@ -38,9 +38,9 @@ func GetParamFromUrlParams(c *gin.Context, name string, defaultIfNotFound string
 }
 
 func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId string) {
-	convert := false
-	if c.DefaultQuery("convert", "false") == "true" {
-		convert = true
+	grayscale := false
+	if c.DefaultQuery("grayscale", "false") == "true" {
+		grayscale = true
 	}
 
 	caption := c.DefaultQuery("caption", "")
@@ -78,6 +78,8 @@ func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId 
 			return
 		}
 	}
+
+	format := c.DefaultQuery("format", "jpg")
 
 	plugin := ""
 	var imgBytes []byte
@@ -137,7 +139,8 @@ func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId 
 		return
 	}
 
-	imgBytes, err := apiClient.GetImage(plugin, imageId, convert, size, caption)
+	convertOptions := utils.ConvertOptions{Size: size, Caption: caption, Grayscale: grayscale, Format: format}
+	imgBytes, mimeType, err := apiClient.GetImage(plugin, imageId, convertOptions)
 	if err != nil {
 		switch err.(type) {
 		case *api.InternalServerError:
@@ -150,12 +153,7 @@ func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId 
 		}
 	}
 
-	format := http.DetectContentType(imgBytes)
-	if convert {
-		format = "image/bmp"
-	}
-
-	c.Writer.Header().Set("Content-Type", format)
+	c.Writer.Header().Set("Content-Type", mimeType)
 	c.Writer.Header().Set("Content-Length", strconv.Itoa(len(imgBytes)))
 	_, err = c.Writer.Write(imgBytes)
 	if err != nil {
@@ -183,7 +181,7 @@ func GetTemplates(path string, funcMap template.FuncMap) (*template.Template, er
 func main() {
 	configDir := "../config/"
 
-	redisAddress := flag.String("redis-address", ":6379", "Address to the Redis server")
+	redisAddress := flag.String("redis-address", "127.0.0.1:6379", "Address to the Redis server")
 	redisMaxConnections := flag.Int("redis-max-connections", 500, "Max connections to Redis")
 	tmpDir := flag.String("tmp-dir", "/tmp", "Tmp directory")
 
@@ -298,6 +296,33 @@ func main() {
 		}
 
 		c.JSON(200, fullDates)
+	})
+
+	router.GET("/v1/topics/:topic/fulldates/:fulldate", func(c *gin.Context) {
+		topic := c.Param("topic")
+		fullDate := c.Param("fulldate")
+
+		topics := plugins.GetTopics()
+		plugins, exists := topics[topic]
+		if !exists {
+			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
+			return
+		}
+
+		data, err := apiClient.GetDataForFullDate(plugins, fullDate)
+		if err != nil {
+			switch err.(type) {
+			case *api.InternalServerError:
+				log.Error(err.Error())
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+				return
+			case *api.ItemNotFoundError:
+				c.JSON(404, gin.H{"error": "No item for that date found"})
+				return
+			}
+		}
+
+		c.JSON(200, data)
 	})
 
 	router.GET("/v1/topics/:topic/dates/:date", func(c *gin.Context) {

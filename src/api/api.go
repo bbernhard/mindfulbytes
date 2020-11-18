@@ -9,6 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"encoding/json"
+	"github.com/gabriel-vasile/mimetype"
+	"bytes"
 )
 
 type InternalServerError struct {
@@ -131,51 +133,56 @@ func removeFiles(files []string) error {
 	return err
 }
 
-func (a *Api) GetImage(plugin string, imageId string, convert bool, size string, caption string) ([]byte, error) {
+func (a *Api) GetImage(plugin string, imageId string, convertOptions utils.ConvertOptions) ([]byte, string, error) {
 	uri := imageId
 
 	p, err := a.plugins.GetPlugin(plugin)
 	if err != nil {
-		return []byte(""), &ItemNotFoundError{Description: "No plugin with that name found: " + err.Error()}
+		return []byte(""), "", &ItemNotFoundError{Description: "No plugin with that name found: " + err.Error()}
 	}
 	
 	tmpFileName, err := uuid.NewV4()
 	if err != nil {
-		return []byte(""), err
+		return []byte(""), "", err
 	}
 
 	tmpDestination := a.tmpDir + "/" + tmpFileName.String()
 	err = a.plugins.ExecFetch(uri, tmpDestination, p.Exec.FetchExec)
 	if err != nil {
-		return []byte(""), &InternalServerError{Description: "Couldn't fetch image: " + err.Error()}
+		return []byte(""), "", &InternalServerError{Description: "Couldn't fetch image: " + err.Error()}
 	}
 
 	tmpFilesToCleanup := []string{tmpDestination}
 
-	if(convert) {
-		u, err := uuid.NewV4()
-		if err != nil {
-			removeFiles(tmpFilesToCleanup) //no need to check return code, it's just cleanup
-			return []byte(""), err
-		}
-		convertedTmpDestination, err := a.imageMagickWrapper.ConvertToEPaper(tmpDestination, u.String(), size, caption)
-		if err != nil {
-			removeFiles(tmpFilesToCleanup) //no need to check return code, it's just cleanup
-			return []byte(""), err
-		}
-		tmpFilesToCleanup = append(tmpFilesToCleanup, convertedTmpDestination)
-		tmpDestination = convertedTmpDestination
+	u, err := uuid.NewV4()
+	if err != nil {
+		removeFiles(tmpFilesToCleanup) //no need to check return code, it's just cleanup
+		return []byte(""), "", err
 	}
+
+	convertedTmpDestination, err := a.imageMagickWrapper.Convert(tmpDestination, u.String(), convertOptions)
+	if err != nil {
+		removeFiles(tmpFilesToCleanup) //no need to check return code, it's just cleanup
+		return []byte(""), "", err
+	}
+	tmpFilesToCleanup = append(tmpFilesToCleanup, convertedTmpDestination)
+	tmpDestination = convertedTmpDestination
 
 	imgBytes, err := ioutil.ReadFile(tmpDestination)
 	if err != nil {
 		removeFiles(tmpFilesToCleanup) //no need to check return code, it's just cleanup
-		return []byte(""), &InternalServerError{Description: "Couldn't read image: " + err.Error()}
+		return []byte(""), "", &InternalServerError{Description: "Couldn't read image: " + err.Error()}
 	}
 
 	removeFiles(tmpFilesToCleanup) //no need to check return code, it's just cleanup
 
-	return imgBytes, nil
+	mime, err := mimetype.DetectReader(bytes.NewReader(imgBytes))
+	if err != nil {
+		return []byte(""), "", err
+	}
+
+
+	return imgBytes, mime.String(), nil
 }
 
 func (a *Api) GetDates(plugins []string) ([]string, error) {

@@ -9,6 +9,13 @@ import (
 	"image"
 )
 
+type ConvertOptions struct {
+	Size string
+	Caption string
+	Grayscale bool
+	Format string
+}
+
 
 type ImageMagickWrapper struct {
 	imageMagickPath string
@@ -71,24 +78,31 @@ func NewImageMagickWrapper(imageMagickPath string, tempDirectory string) *ImageM
 	}
 }
 
-func (w *ImageMagickWrapper) ConvertToEPaper(inPath string, outFilename string, size string, caption string) (string, error) {
-	outPath := w.tempDirectory + "/" + outFilename + ".bmp"
+func (w *ImageMagickWrapper) Convert(inPath string, outFilename string, convertOptions ConvertOptions) (string, error) {
+	outPath := w.tempDirectory + "/" + outFilename
+
+	if convertOptions.Format != "" {
+		outPath += "." + convertOptions.Format
+	}
 
 	args := []string{}
 	args = append(args, inPath)
-	args = append(args, []string{"+dither", "-depth", "24", "-colorspace", "Gray"}...)
 
-	if caption != "" {
+	if convertOptions.Grayscale {
+		args = append(args, []string{"+dither", "-depth", "24", "-colorspace", "Gray"}...)
+	}
+
+	if convertOptions.Caption != "" {
 		//scale pointsize to half of 1/10 of the image height (-pointsize %[fx:h*(1/10)/2])
 		//draw black rectangle with 10% height
 		//offset y text position by 1/4 of image height
 		args = append(args, []string{"-pointsize", "%[fx:h*(1/10)/2]", "-gravity", "South", "-background", "black", "-fill", 
-			"white", "-splice", "0x10%", "-annotate", "+0+%[fx:h*(1/10)/4]", caption}...)
+			"white", "-splice", "0x10%", "-annotate", "+0+%[fx:h*(1/10)/4]", convertOptions.Caption}...)
 	}
 
-	if size != "" {
+	if convertOptions.Size != "" {
 		args = append(args, "-resize")
-		args = append(args, size)
+		args = append(args, convertOptions.Size)
 	}
 
 	args = append(args, outPath)

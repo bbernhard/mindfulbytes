@@ -25,13 +25,9 @@ type PluginMetaData struct {
 	Topics []string `yaml:"topics"`
 }
 
-type Notification struct {
-	Recipients []string `yaml:"recipients"`
-}
-
 type PluginConfig struct {
+	Refresh string `yaml:"refresh"`
 	Args map[string]string `yaml:"args"`
-	Notifications []Notification `yaml:"notifications"`
 }
 
 type CrawlExec struct {

@@ -35,6 +35,15 @@ func (splitter *OutputSplitter) Write(p []byte) (n int, err error) {
 	return os.Stdout.Write(p)
 }
 
+func getRedisAddress() string {
+	redisAddress := os.Getenv("REDIS_ADDRESS")
+	if redisAddress == "" {
+		return ":6379"
+	}
+
+	return redisAddress
+}
+
 func getFilesRecursively(client *gowebdav.Client, dir string, totalFiles *[]FileInfo) error {
 	files, err := client.ReadDir(dir)
 	if err != nil {
@@ -49,10 +58,23 @@ func getFilesRecursively(client *gowebdav.Client, dir string, totalFiles *[]File
 		fullPath += file.Name()
 
 		log.Debug("Fetching file ", fullPath)
-
-		*totalFiles = append(*totalFiles, FileInfo{Path: fullPath, ModificationTime: file.ModTime()})
+		
 		if file.IsDir() {
 			getFilesRecursively(client, fullPath, totalFiles)
+		} else {
+			//we are only interested in images
+			contentType := file.(gowebdav.File).ContentType()
+			contentTypeParts := strings.Split(contentType, "/")
+			if len(contentTypeParts) < 2 {
+				log.Debug("Skipping ", fullPath, " as we've got an invalid content type (content type: ", contentType, ")")
+				continue
+			}
+
+			if contentTypeParts[0] == "image" {
+				*totalFiles = append(*totalFiles, FileInfo{Path: fullPath, ModificationTime: file.ModTime()})
+			} else {
+				log.Debug("Skipping ", fullPath, " as we've got an invalid content type (content type: ", contentType, ")")
+			}
 		}
 	}
 
@@ -205,16 +227,14 @@ func main() {
 	nextcloudWebDavUrlCrawlCmd := crawlCommand.String("nextcloud-webdav-url", "", "Nextcloud Webdav URL")
 	nextcloudAppTokenCrawlCmd := crawlCommand.String("nextcloud-token", "", "Nextcloud App Token")
 	nextcloudRootDir := crawlCommand.String("nextcloud-root-dir", "", "Nextcloud Root Directory")
-	redisAddress := crawlCommand.String("redis-address", ":6379", "Address to the Redis server")
-	redisMaxConnections := crawlCommand.Int("redis-max-connections", 500, "Max connections to Redis")
 
 	fetchCommand := flag.NewFlagSet("fetch", flag.ExitOnError)
 	fetchId := fetchCommand.String("id", "", "Identifier")
 	nextcloudWebDavUrlFetchCmd := fetchCommand.String("nextcloud-webdav-url", "", "Nextcloud Webdav URL")
 	nextcloudAppTokenFetchCmd := fetchCommand.String("nextcloud-token", "", "Nextcloud App Token")
 	destinationFetchCmd := fetchCommand.String("destination", "", "Destination")
-	redisAddressFetchCmd := fetchCommand.String("redis-address", ":6379", "Address to the Redis server")
-	redisMaxConnectionsFetchCmd := fetchCommand.Int("redis-max-connections", 500, "Max connections to Redis")
+
+	redisMaxConnections := 10
 
 	flag.Parse()
 
@@ -241,7 +261,7 @@ func main() {
 				log.Fatal("Please specify the Nextcloud root directory")
 			}
 
-			crawl(*redisAddress, *redisMaxConnections, *nextcloudWebDavUrlCrawlCmd, *nextcloudAppTokenCrawlCmd, *nextcloudRootDir)
+			crawl(getRedisAddress(), redisMaxConnections, *nextcloudWebDavUrlCrawlCmd, *nextcloudAppTokenCrawlCmd, *nextcloudRootDir)
 
 		case "fetch":
 			fetchCommand.Parse(os.Args[2:])
@@ -261,7 +281,7 @@ func main() {
 				log.Fatal("Please provide a destination")
 			}
 
-			fetch(*redisAddressFetchCmd, *redisMaxConnectionsFetchCmd, *nextcloudWebDavUrlFetchCmd, *nextcloudAppTokenFetchCmd, *fetchId, *destinationFetchCmd)
+			fetch(getRedisAddress(), redisMaxConnections, *nextcloudWebDavUrlFetchCmd, *nextcloudAppTokenFetchCmd, *fetchId, *destinationFetchCmd)
 		default:
 			log.Fatal(os.Args[1], " is not valid command.")
 	}
