@@ -165,7 +165,7 @@ func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId 
 func GetTemplates(path string, funcMap template.FuncMap) (*template.Template, error) {
 	templ := template.New("main").Funcs(funcMap)
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if strings.Contains(path, ".html") || strings.Contains(path, ".js") {
+		if strings.Contains(path, ".html") {
 			_, err = templ.ParseFiles(path)
 			if err != nil {
 				return err

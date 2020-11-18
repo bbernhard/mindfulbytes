@@ -3,10 +3,19 @@
 <script src="/js/jquery/jquery.min.js?v={{.assetVersion}}"></script>
 <script src="/js/modules/imgreader.js?v={{.assetVersion}}"></script>
 
+<style>
+.has-image-centered {
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
 <section class="section">
   <div class="container">
     <h1 class="title has-text-centered" id="when"></h1>
 	<h2 class="subtitle has-text-centered" id="whenDetailed"></h2>
-	<img id="img">
+	<figure class="image has-image-centered">
+	  <img id="img">
+    </figure>
   </div>
 </section>

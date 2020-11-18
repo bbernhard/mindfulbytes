@@ -22,14 +22,14 @@ var MindfulBytesApi = (function() {
 		});
     }
 
-	MindfulBytesApi.prototype.getImageUrlFromId = function(name, imageId) {
-		return this.baseUrl + "/" + this.apiVersion + "/plugins/" + name + "/images/" + imageId;
+	MindfulBytesApi.prototype.getImageUrlFromId = function(name, imageId, size="800x600") {
+		return this.baseUrl + "/" + this.apiVersion + "/plugins/" + name + "/images/" + imageId + "?format=jpg&size=" + size;
 	}
 
 	MindfulBytesApi.prototype.getDataForFullDate = function(name, fullDate) {
 		var inst = this;
 		return new Promise(function(resolve, reject) {
-			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/fulldates/" + fullDate;
+			var url = inst.baseUrl + "/" + inst.apiVersion + "/topics/" + name + "/fulldates/" + fullDate;
 			var xhr = new XMLHttpRequest();
 			xhr.responseType = "json";
 			xhr.open("GET", url);
@@ -44,7 +44,7 @@ var MindfulBytesApi = (function() {
 	MindfulBytesApi.prototype.getDataForDate = function(name, date) {
 		var inst = this;
 		return new Promise(function(resolve, reject) {
-			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/dates/" + date;
+			var url = inst.baseUrl + "/" + inst.apiVersion + "/topics/" + name + "/dates/" + date;
 			var xhr = new XMLHttpRequest();
 			xhr.responseType = "json";
 			xhr.open("GET", url);
@@ -59,7 +59,7 @@ var MindfulBytesApi = (function() {
 	MindfulBytesApi.prototype.getDates = function(name) {
 		var inst = this;
 		return new Promise(function(resolve, reject) {
-			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/dates/";
+			var url = inst.baseUrl + "/" + inst.apiVersion + "/topics/" + name + "/dates/";
 			var xhr = new XMLHttpRequest();
 			xhr.responseType = "json";
 			xhr.open("GET", url);
@@ -75,7 +75,7 @@ var MindfulBytesApi = (function() {
 	MindfulBytesApi.prototype.getFullDates = function(name) {
 		var inst = this;
 		return new Promise(function(resolve, reject) {
-			var url = inst.baseUrl + "/" + inst.apiVersion + "/plugins/" + name + "/fulldates/";
+			var url = inst.baseUrl + "/" + inst.apiVersion + "/topics/" + name + "/fulldates/";
 			var xhr = new XMLHttpRequest();
 			xhr.responseType = "json";
 			xhr.open("GET", url);
