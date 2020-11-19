@@ -183,6 +183,7 @@ func main() {
 
 	redisAddress := flag.String("redis-address", "127.0.0.1:6379", "Address to the Redis server")
 	redisMaxConnections := flag.Int("redis-max-connections", 500, "Max connections to Redis")
+	baseUrl := flag.String("base-url", "http://127.0.0.1:8085", "Base URL")
 	tmpDir := flag.String("tmp-dir", "/tmp", "Tmp directory")
 
 	if *tmpDir == "" {
@@ -236,7 +237,7 @@ func main() {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"assetVersion": assetVersion,
-			"baseUrl":      "http://127.0.0.1:8085",
+			"baseUrl":      *baseUrl,
 		})
 	})
 

@@ -4,4 +4,4 @@
 
 echo "Starting web"
 
-/home/mindfulbytes/bin/web -redis-address="$REDIS_ADDRESS"
+/home/mindfulbytes/bin/web -redis-address="$REDIS_ADDRESS" -base-url="$BASE_URL"

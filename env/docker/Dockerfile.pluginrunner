@@ -2,7 +2,7 @@ FROM golang:1.15-buster
 
 RUN useradd -ms /bin/bash mindfulbytes
 
-RUN mkdir -p /home/mindfulbytes/bin
+RUN mkdir -p /home/mindfulbytes/bin/plugins
 
 RUN apt-get update && apt-get install -y python3 python3-pip
 
@@ -14,18 +14,12 @@ RUN wget https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3
 COPY src/ /home/mindfulbytes/src
 COPY env/docker/entrypoint_pluginrunner.sh /home/mindfulbytes/bin/entrypoint_pluginrunner.sh
 
-RUN mkdir -p /home/mindfulbytes/bin/plugins
-
 RUN cd /home/mindfulbytes/src && go build pluginrunner.go && mv pluginrunner /home/mindfulbytes/bin 
 
-#TODO make recursive!!!!!!
 
-RUN cp -r /home/mindfulbytes/src/plugins/imgreader-nc /home/mindfulbytes/bin/plugins/imgreader-nc
-RUN cd /home/mindfulbytes/src/plugins/imgreader-nc/ && go build main.go 
-
-RUN cp -r /home/mindfulbytes/src/plugins/imgreader-fs /home/mindfulbytes/bin/plugins/imgreader-fs
-
-
+# install plugins
+COPY env/docker/install_plugins.py /home/mindfulbytes/src/plugins/install_plugins.py
+RUN python3 /home/mindfulbytes/src/plugins/install_plugins.py
 
 #USER mindfulbytes
 
