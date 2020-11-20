@@ -1,5 +1,9 @@
 FROM golang:1.15-buster
 
+RUN echo "deb-src http://deb.debian.org/debian buster main" >> /etc/apt/sources.list 
+
+RUN apt-get update && apt-get install -y git python3 python3-pip 
+
 RUN useradd -ms /bin/bash mindfulbytes
 
 RUN mkdir -p /home/mindfulbytes/bin/plugins
@@ -7,12 +11,15 @@ RUN mkdir -p /home/mindfulbytes/bin/plugins
 RUN wget https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait --directory-prefix=/usr/bin \
 	&& chmod u+rx /usr/bin/wait
 
-RUN apt-get update && apt-get install -y git python3 python3-pip
-
 RUN pip3 install Pillow redis
+
+RUN apt build-dep -y imagemagick
 
 RUN git clone https://github.com/ImageMagick/ImageMagick.git /tmp/ImageMagick \
 	&& cd /tmp/ImageMagick && git checkout 7.0.10-39 && ./configure && make && make install 
+
+RUN ldconfig /usr/local/lib
+RUN ln -s /usr/local/bin/magick /usr/bin/magick
 
 COPY src/ /home/mindfulbytes/src
 COPY js   /home/mindfulbytes/js

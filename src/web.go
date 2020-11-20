@@ -82,7 +82,31 @@ func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId 
 	format := c.DefaultQuery("format", "jpg")
 
 	plugin := ""
+	if len(plugins) > 0 {
+		plugin = plugins[0]
+	}
+
+
 	var imgBytes []byte
+
+	if imageId == "today-or-random" {
+		currentDate := time.Now()
+		currentDateStr := currentDate.Format("01-02")
+		todaysEntries, err := apiClient.GetDataForDate(plugins, currentDateStr)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		}
+		if len(todaysEntries) > 0 {
+			randomNum:= getRandomNumber(len(todaysEntries))
+			imageId = todaysEntries[randomNum].Uuid
+			plugin = todaysEntries[randomNum].Plugin
+		} else {
+			imageId = "random"
+		}
+	}
+
+
 	if imageId == "random" {
 		fullDates, err := apiClient.GetFullDates(plugins)
 		if err != nil {
@@ -130,9 +154,7 @@ func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId 
 
 		imageId = dataEntries[randomNum].Uuid
 		plugin = dataEntries[randomNum].Plugin
-	} else {
-		plugin = plugins[0]
-	}
+	} 
 
 	if plugin == "" {
 		c.JSON(404, gin.H{"error": "No plugin specified"})
@@ -149,6 +171,9 @@ func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId 
 			return
 		case *api.ItemNotFoundError:
 			c.JSON(404, gin.H{"error": "No item for that date found"})
+			return
+		default:
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
 			return
 		}
 	}
@@ -267,6 +292,9 @@ func main() {
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
 				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+				return
 			}
 		}
 
@@ -292,6 +320,9 @@ func main() {
 				return
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
+				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
 				return
 			}
 		}
@@ -320,6 +351,9 @@ func main() {
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
 				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+				return
 			}
 		}
 
@@ -347,6 +381,9 @@ func main() {
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
 				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+				return
 			}
 		}
 
@@ -364,6 +401,19 @@ func main() {
 		}
 
 		deliverImage(c, apiClient, plugins, "random")
+	})
+
+	router.GET("/v1/topics/:topic/images/today-or-random", func(c *gin.Context) {
+		topic := c.Param("topic")
+
+		topics := plugins.GetTopics()
+		plugins, exists := topics[topic]
+		if !exists {
+			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
+			return
+		}
+
+		deliverImage(c, apiClient, plugins, "today-or-random")
 	})
 
 	router.GET("/v1/plugins", func(c *gin.Context) {
@@ -393,6 +443,9 @@ func main() {
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
 				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+				return
 			}
 		}
 
@@ -411,6 +464,9 @@ func main() {
 				return
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
+				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
 				return
 			}
 		}
@@ -431,6 +487,9 @@ func main() {
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
 				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+				return
 			}
 		}
 
@@ -450,6 +509,9 @@ func main() {
 				return
 			case *api.ItemNotFoundError:
 				c.JSON(404, gin.H{"error": "No item for that date found"})
+				return
+			default:
+				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
 				return
 			}
 		}
