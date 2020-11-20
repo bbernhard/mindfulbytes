@@ -7,9 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
 	log "github.com/sirupsen/logrus"
-	timeago "github.com/xeonx/timeago"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/bbernhard/mindfulbytes/docs"
 	"html/template"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,11 +21,7 @@ import (
 
 var assetVersion string = ""
 
-func getRandomNumber(max int) int {
-	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
-	return r1.Intn(max)
-}
+
 
 func GetParamFromUrlParams(c *gin.Context, name string, defaultIfNotFound string) string {
 	params := c.Request.URL.Query()
@@ -37,155 +34,6 @@ func GetParamFromUrlParams(c *gin.Context, name string, defaultIfNotFound string
 	return param
 }
 
-func deliverImage(c *gin.Context, apiClient *api.Api, plugins []string, imageId string) {
-	grayscale := false
-	if c.DefaultQuery("grayscale", "false") == "true" {
-		grayscale = true
-	}
-
-	caption := c.DefaultQuery("caption", "")
-
-	autoCaption := c.DefaultQuery("auto_caption", "false")
-
-	if autoCaption == "true" && caption != "" {
-		c.JSON(400, gin.H{"error": "Auto caption and caption cannot be set at the same time"})
-		return
-	}
-
-	if autoCaption == "true" && imageId != "random" {
-		c.JSON(400, gin.H{"error": "Auto caption not yet supported here"})
-		return
-	}
-
-	size := c.DefaultQuery("size", "")
-	if size != "" {
-		sizes := strings.Split(size, "x")
-
-		if len(sizes) != 2 {
-			c.JSON(400, gin.H{"error": "Couldn't process request - invalid image size"})
-			return
-		}
-
-		_, err := strconv.Atoi(sizes[0])
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Couldn't process request - invalid image width"})
-			return
-		}
-
-		_, err = strconv.Atoi(sizes[1])
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Couldn't process request - invalid image height"})
-			return
-		}
-	}
-
-	format := c.DefaultQuery("format", "jpg")
-
-	plugin := ""
-	if len(plugins) > 0 {
-		plugin = plugins[0]
-	}
-
-
-	var imgBytes []byte
-
-	if imageId == "today-or-random" {
-		currentDate := time.Now()
-		currentDateStr := currentDate.Format("01-02")
-		todaysEntries, err := apiClient.GetDataForDate(plugins, currentDateStr)
-		if err != nil {
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
-		}
-		if len(todaysEntries) > 0 {
-			randomNum:= getRandomNumber(len(todaysEntries))
-			imageId = todaysEntries[randomNum].Uuid
-			plugin = todaysEntries[randomNum].Plugin
-		} else {
-			imageId = "random"
-		}
-	}
-
-
-	if imageId == "random" {
-		fullDates, err := apiClient.GetFullDates(plugins)
-		if err != nil {
-			log.Error(err.Error())
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
-		}
-
-		if len(fullDates) == 0 {
-			c.JSON(400, gin.H{"error": "No images for plugin(s) " + strings.Join(plugins, ",") + " found"})
-			return
-		}
-
-		randomNum := getRandomNumber(len(fullDates))
-		randomFullDate := fullDates[randomNum]
-
-		if autoCaption == "true" {
-			timeLayout := "2006-01-02"
-
-			timeagoGermanConfig := timeago.NoMax(timeago.German)
-			timeagoGermanConfig.DefaultLayout = timeLayout
-
-			fullDate, err := time.Parse(timeLayout, fullDates[randomNum])
-			if err != nil {
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-			caption = timeagoGermanConfig.FormatReference(fullDate, time.Now())
-		}
-
-		dataEntries, err := apiClient.GetDataForFullDate(plugins, randomFullDate)
-		if err != nil {
-			log.Error(err.Error())
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
-		}
-
-		if len(dataEntries) == 0 {
-			c.JSON(404, gin.H{"error": "No images found"})
-			return
-		}
-
-		randomNum = getRandomNumber(len(dataEntries))
-
-		imageId = dataEntries[randomNum].Uuid
-		plugin = dataEntries[randomNum].Plugin
-	} 
-
-	if plugin == "" {
-		c.JSON(404, gin.H{"error": "No plugin specified"})
-		return
-	}
-
-	convertOptions := utils.ConvertOptions{Size: size, Caption: caption, Grayscale: grayscale, Format: format}
-	imgBytes, mimeType, err := apiClient.GetImage(plugin, imageId, convertOptions)
-	if err != nil {
-		switch err.(type) {
-		case *api.InternalServerError:
-			log.Error(err.Error())
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
-		case *api.ItemNotFoundError:
-			c.JSON(404, gin.H{"error": "No item for that date found"})
-			return
-		default:
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
-		}
-	}
-
-	c.Writer.Header().Set("Content-Type", mimeType)
-	c.Writer.Header().Set("Content-Length", strconv.Itoa(len(imgBytes)))
-	_, err = c.Writer.Write(imgBytes)
-	if err != nil {
-		log.Error("Couldn't serve image: ", err.Error())
-		return
-	}
-}
 
 func GetTemplates(path string, funcMap template.FuncMap) (*template.Template, error) {
 	templ := template.New("main").Funcs(funcMap)
@@ -203,6 +51,15 @@ func GetTemplates(path string, funcMap template.FuncMap) (*template.Template, er
 	return templ, err
 }
 
+// @title MindfulBytes REST API
+// @version 1.0
+// @description This is the MindfulBytes API documentation.
+
+// @tag.name General
+// @tag.description List general information.
+
+// @host 127.0.0.1:8085
+// @BasePath /
 func main() {
 	configDir := "../config/"
 
@@ -242,6 +99,7 @@ func main() {
 
 	imageMagickWrapper := utils.NewImageMagickWrapper("/usr/bin/magick", *tmpDir+"/")
 	apiClient := api.NewApi(redisConn, imageMagickWrapper, plugins, *tmpDir)
+	requestHandler := api.NewRequestHandler(apiClient, plugins)
 
 	var tmpl *template.Template
 	funcMap := template.FuncMap{}
@@ -266,265 +124,32 @@ func main() {
 		})
 	})
 
-	router.GET("/v1/topics", func(c *gin.Context) {
-		topics := plugins.GetTopics()
-
-		c.JSON(200, topics)
-	})
-
-	router.GET("/v1/topics/:topic/dates", func(c *gin.Context) {
-		topic := c.Param("topic")
-
-		topics := plugins.GetTopics()
-		plugins, exists := topics[topic]
-		if !exists {
-			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
-			return
+	v1 := router.Group("/v1")
+	{
+		topicsGroup := v1.Group("/topics")
+		{
+			topicsGroup.GET("", requestHandler.GetTopics)
+			topicsGroup.GET("/:topic/dates", requestHandler.GetDatesForTopic)
+			topicsGroup.GET("/:topic/fulldates", requestHandler.GetFullDatesForTopic)
+			topicsGroup.GET("/:topic/fulldates/:fulldate", requestHandler.GetFullDateDataForTopic)
+			topicsGroup.GET("/:topic/dates/:date", requestHandler.GetDateDataForTopic)
+			topicsGroup.GET("/:topic/images/random", requestHandler.GetRandomImageForTopic)
+			topicsGroup.GET("/:topic/images/today-or-random", requestHandler.GetTodayOrRandomImageForTopic)
 		}
 
-		dates, err := apiClient.GetDates(plugins)
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
+		pluginsGroup := v1.Group("/plugins")
+		{
+			pluginsGroup.GET("", requestHandler.GetPlugins)
+			pluginsGroup.GET("/:plugin/dates", requestHandler.GetDatesForPlugin)
+			pluginsGroup.GET("/:plugin/dates/:date", requestHandler.GetDateDataForPlugin)
+			pluginsGroup.GET("/:plugin/fulldates", requestHandler.GetFullDatesForPlugin)
+			pluginsGroup.GET("/:plugin/fulldates/:fulldate", requestHandler.GetFullDateDataForPlugin)
+			pluginsGroup.GET("/:plugin/images/:imageid", requestHandler.GetImageForPlugin)
 		}
+	}
 
-		c.JSON(200, dates)
-	})
-
-	router.GET("/v1/topics/:topic/fulldates", func(c *gin.Context) {
-		topic := c.Param("topic")
-
-		topics := plugins.GetTopics()
-		plugins, exists := topics[topic]
-		if !exists {
-			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
-			return
-		}
-
-		fullDates, err := apiClient.GetFullDates(plugins)
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-		}
-
-		c.JSON(200, fullDates)
-	})
-
-	router.GET("/v1/topics/:topic/fulldates/:fulldate", func(c *gin.Context) {
-		topic := c.Param("topic")
-		fullDate := c.Param("fulldate")
-
-		topics := plugins.GetTopics()
-		plugins, exists := topics[topic]
-		if !exists {
-			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
-			return
-		}
-
-		data, err := apiClient.GetDataForFullDate(plugins, fullDate)
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-		}
-
-		c.JSON(200, data)
-	})
-
-	router.GET("/v1/topics/:topic/dates/:date", func(c *gin.Context) {
-		topic := c.Param("topic")
-		date := c.Param("date")
-
-		topics := plugins.GetTopics()
-		plugins, exists := topics[topic]
-		if !exists {
-			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
-			return
-		}
-
-		data, err := apiClient.GetDataForDate(plugins, date)
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-		}
-
-		c.JSON(200, data)
-	})
-
-	router.GET("/v1/topics/:topic/images/random", func(c *gin.Context) {
-		topic := c.Param("topic")
-
-		topics := plugins.GetTopics()
-		plugins, exists := topics[topic]
-		if !exists {
-			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
-			return
-		}
-
-		deliverImage(c, apiClient, plugins, "random")
-	})
-
-	router.GET("/v1/topics/:topic/images/today-or-random", func(c *gin.Context) {
-		topic := c.Param("topic")
-
-		topics := plugins.GetTopics()
-		plugins, exists := topics[topic]
-		if !exists {
-			c.JSON(404, gin.H{"error": "No plugins for that topic found"})
-			return
-		}
-
-		deliverImage(c, apiClient, plugins, "today-or-random")
-	})
-
-	router.GET("/v1/plugins", func(c *gin.Context) {
-		type PluginEntry struct {
-			Name string `json:"name"`
-		}
-
-		pluginEntries := []PluginEntry{}
-		for _, plugin := range plugins.GetPlugins() {
-			pluginEntry := PluginEntry{Name: plugin.Name}
-			pluginEntries = append(pluginEntries, pluginEntry)
-		}
-
-		c.JSON(200, pluginEntries)
-	})
-
-	router.GET("/v1/plugins/:plugin/fulldates/:fulldate", func(c *gin.Context) {
-		plugin := c.Param("plugin")
-		fullDate := c.Param("fulldate")
-		data, err := apiClient.GetDataForFullDate([]string{plugin}, fullDate)
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-		}
-
-		c.JSON(200, data)
-	})
-
-	router.GET("/v1/plugins/:plugin/fulldates", func(c *gin.Context) {
-		plugin := c.Param("plugin")
-
-		fullDates, err := apiClient.GetFullDates([]string{plugin})
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-		}
-
-		c.JSON(200, fullDates)
-	})
-
-	router.GET("/v1/plugins/:plugin/dates", func(c *gin.Context) {
-		plugin := c.Param("plugin")
-
-		dates, err := apiClient.GetDates([]string{plugin})
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-		}
-
-		c.JSON(200, dates)
-	})
-
-	router.GET("/v1/plugins/:plugin/dates/:date", func(c *gin.Context) {
-		plugin := c.Param("plugin")
-		date := c.Param("date")
-
-		data, err := apiClient.GetDataForDate([]string{plugin}, date)
-		if err != nil {
-			switch err.(type) {
-			case *api.InternalServerError:
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			case *api.ItemNotFoundError:
-				c.JSON(404, gin.H{"error": "No item for that date found"})
-				return
-			default:
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-		}
-
-		c.JSON(200, data)
-	})
-
-	router.GET("/v1/plugins/:plugin/images/:imageid", func(c *gin.Context) {
-		plugin := c.Param("plugin")
-		imageId := c.Param("imageid")
-
-		deliverImage(c, apiClient, []string{plugin}, imageId)
-	})
+	swaggerUrl := ginSwagger.URL("http://127.0.0.1:8085/swagger/doc.json")
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	router.Run(":8085")
 }
