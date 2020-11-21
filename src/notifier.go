@@ -46,6 +46,7 @@ func main() {
 	flag.Parse()
 
 	log.SetLevel(log.DebugLevel)
+	log.SetOutput(&utils.LogOutputSplitter{})
 	log.Info("Starting notifier")
 
 	//create redis pool

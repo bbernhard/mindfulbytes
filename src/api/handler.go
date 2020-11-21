@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 	"math/rand"
-	timeago "github.com/xeonx/timeago"
 )
 
 func getRandomNumber(max int) int {
@@ -107,16 +106,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 		if autoCaption == "true" {
 			timeLayout := "2006-01-02"
 
-			var timeagoConfig timeago.Config
-			
-			if language == "en" {
-				timeagoConfig = timeago.NoMax(timeago.English)
-			} else if language == "ge" {
-				timeagoConfig = timeago.NoMax(timeago.German)
-			} else {
-				timeagoConfig = timeago.NoMax(timeago.English)
-			}
-			timeagoConfig.DefaultLayout = timeLayout
+			timeagoConfig := utils.GetTimeagoConfigForLanguage(language)
 
 			fullDate, err := time.Parse(timeLayout, fullDates[randomNum])
 			if err != nil {

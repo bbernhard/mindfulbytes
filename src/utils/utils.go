@@ -4,9 +4,14 @@ import (
 	"time"
 	"errors"
 	"strconv"
+	"strings"
+	"regexp"
+	"os"
+	"bytes"
 	"github.com/bbernhard/mindfulbytes/config"
 	"github.com/gomodule/redigo/redis"
 	log "github.com/sirupsen/logrus"
+	timeago "github.com/xeonx/timeago"
 )
 
 type scheduleNotificationFuncDef func(string, config.Notification) error
@@ -21,6 +26,15 @@ func StringInSlice(a string, list []string) bool {
     return false
 }
 
+type LogOutputSplitter struct{}
+
+func (splitter *LogOutputSplitter) Write(p []byte) (n int, err error) {
+	if bytes.Contains(p, []byte("level=error")) {
+		return os.Stderr.Write(p)
+	}
+	return os.Stdout.Write(p)
+}
+
 func FuzzyTimeToDuration(t string) (time.Duration, error) {
 	if t == "daily" {
 		return time.ParseDuration("24h")
@@ -31,6 +45,38 @@ func FuzzyTimeToDuration(t string) (time.Duration, error) {
 	}
 
 	return time.ParseDuration("24h")
+}
+
+func GetTimeagoConfigForLanguage(language string) timeago.Config {
+	var timeagoConfig timeago.Config
+	timeLayout := "2006-01-02"
+	if language == "en" {
+		timeagoConfig = timeago.NoMax(timeago.English)
+	} else if language == "ge" {
+		timeagoConfig = timeago.NoMax(timeago.German)
+	} else {
+		timeagoConfig = timeago.NoMax(timeago.English)
+	}
+	timeagoConfig.DefaultLayout = timeLayout
+	return timeagoConfig
+}
+
+func ReplaceTagsInMessage(template string, timestamp time.Time, language string) (string, error) {
+	s := template
+	r := regexp.MustCompile("(\\{\\{[ ]*[a-z]*[ ]*\\}\\})*")
+	allSubmatches := r.FindAllStringSubmatch(template, -1)
+	for _, subMatch := range allSubmatches {
+		if len(subMatch) > 0 {
+			tag := subMatch[0]
+			strippedTag := strings.Replace(tag, " ", "", -1)
+			if strippedTag == "{{timeago}}" {
+				timeagoConfig := GetTimeagoConfigForLanguage(language)
+				t := timeagoConfig.FormatReference(timestamp, time.Now())
+				s = strings.Replace(s, tag, t, -1)
+			}
+		}
+	}
+	return s, nil
 }
 
 func GetLastSuccessfulCrawlExecutionTimestamp(redisPool *redis.Pool, pluginName string) (time.Time, error) {

@@ -51,7 +51,7 @@ func (s *Email) Notify() error {
 			e.To = recipients
 			e.Subject = "MindfulBytes"
 
-			_, err = e.Attach(bytes.NewReader(data), "mindfulybtes"+mime.Extension(), mime.String())
+			_, err = e.Attach(bytes.NewReader(data), "mindfulbytes"+mime.Extension(), mime.String())
 			if err != nil {
 				return err
 			}

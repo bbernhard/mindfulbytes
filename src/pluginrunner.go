@@ -32,6 +32,7 @@ func main() {
 	flag.Parse()
 
 	log.SetLevel(log.DebugLevel)
+	log.SetOutput(&utils.LogOutputSplitter{})
 
 	//create redis pool
 	redisPool := redis.NewPool(func() (redis.Conn, error) {

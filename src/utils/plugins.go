@@ -205,7 +205,8 @@ func execPlugin(command string, args []string, baseDir string) error {
 					c.Stderr = nil
 					continue
 				}
-				log.Error(os.Stderr, line)
+				log.Error(line)
+				//log.Error(os.Stderr, line)
 			}
 		}
 	}()

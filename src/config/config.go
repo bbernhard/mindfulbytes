@@ -7,6 +7,7 @@ import (
 
 type Notification struct {
 	Recipients []string `yaml:"recipients"`
+	Message string `yaml:"message"`
 	Enabled bool `yaml:"enabled"`
 	Topics []string `yaml:"topics"`
 	Interval string `yaml:"interval"`

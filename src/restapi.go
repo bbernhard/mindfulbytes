@@ -68,11 +68,14 @@ func main() {
 	baseUrl := flag.String("base-url", "http://127.0.0.1:8085", "Base URL")
 	tmpDir := flag.String("tmp-dir", "/tmp", "Tmp directory")
 
+	flag.Parse()
+
+	log.SetLevel(log.DebugLevel)
+	log.SetOutput(&utils.LogOutputSplitter{})
+	
 	if *tmpDir == "" {
 		log.Fatal("Please provide a valid tmp-dir")
 	}
-
-	flag.Parse()
 
 	assetVersion = strconv.FormatInt(int64(time.Now().Unix()), 10)
 
@@ -88,9 +91,6 @@ func main() {
 	}, *redisMaxConnections)
 	defer redisPool.Close()
 
-	redisConn := redisPool.Get()
-	defer redisConn.Close()
-
 	plugins := utils.NewPlugins("./plugins/", configDir)
 	err := plugins.Load()
 	if err != nil {
@@ -98,7 +98,7 @@ func main() {
 	}
 
 	imageMagickWrapper := utils.NewImageMagickWrapper("/usr/bin/magick", *tmpDir+"/")
-	apiClient := api.NewApi(redisConn, imageMagickWrapper, plugins, *tmpDir)
+	apiClient := api.NewApi(redisPool, imageMagickWrapper, plugins, *tmpDir)
 	requestHandler := api.NewRequestHandler(apiClient, plugins)
 
 	var tmpl *template.Template

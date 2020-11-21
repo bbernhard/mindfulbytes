@@ -36,15 +36,15 @@ type Entry struct {
 }
 
 type Api struct {
-	redisConn redis.Conn
+	redisPool *redis.Pool
 	imageMagickWrapper *utils.ImageMagickWrapper
 	plugins *utils.Plugins
 	tmpDir string
 }
 
-func NewApi(redisConn redis.Conn, imageMagickWrapper *utils.ImageMagickWrapper, plugins *utils.Plugins, tmpDir string) *Api {
+func NewApi(redisPool *redis.Pool, imageMagickWrapper *utils.ImageMagickWrapper, plugins *utils.Plugins, tmpDir string) *Api {
 	return &Api{
-		redisConn: redisConn,
+		redisPool: redisPool,
 		imageMagickWrapper: imageMagickWrapper,
 		plugins: plugins,
 		tmpDir: tmpDir,
@@ -53,11 +53,14 @@ func NewApi(redisConn redis.Conn, imageMagickWrapper *utils.ImageMagickWrapper, 
 
 
 func (a *Api) GetDataForDate(plugins []string, date string) ([]Entry, error) {
+	redisConn := a.redisPool.Get()
+	defer redisConn.Close()
+	
 	allEntries := []Entry{}
 	for _, plugin := range plugins {
 		key := plugin + ":date:" + date
 
-		bytes, err := redis.Bytes(a.redisConn.Do("GET", key))
+		bytes, err := redis.Bytes(redisConn.Do("GET", key))
 		if err != nil {
 			if err == redis.ErrNil {
 				if len(plugins) == 1 {
@@ -86,13 +89,15 @@ func (a *Api) GetDataForDate(plugins []string, date string) ([]Entry, error) {
 }
 
 func (a *Api) GetDataForFullDate(plugins []string, day string) ([]Entry, error) {
-	
+	redisConn := a.redisPool.Get()
+	defer redisConn.Close()
+
 	allEntries := []Entry{}
 
 	for _, plugin := range plugins {
 		key := plugin + ":fulldate:" + day
 		
-		bytes, err := redis.Bytes(a.redisConn.Do("GET", key))
+		bytes, err := redis.Bytes(redisConn.Do("GET", key))
 		if err != nil {
 			if err == redis.ErrNil {
 				if len(plugins) == 1 {
@@ -186,12 +191,14 @@ func (a *Api) GetImage(plugin string, imageId string, convertOptions utils.Conve
 }
 
 func (a *Api) GetDates(plugins []string) ([]string, error) {
-
+	redisConn := a.redisPool.Get()
+	defer redisConn.Close()
+	
 	dates := []string{}
 	for _, plugin := range plugins {
 		key := plugin + ":date:*"
 
-		res, err := redis.Strings(a.redisConn.Do("KEYS", key))
+		res, err := redis.Strings(redisConn.Do("KEYS", key))
 		if err != nil {
 			if err == redis.ErrNil {
 				return []string{}, &ItemNotFoundError{Description:"No item with that key found"}
@@ -213,13 +220,15 @@ func (a *Api) GetDates(plugins []string) ([]string, error) {
 }
 
 func (a *Api) GetFullDates(plugins []string) ([]string, error) {
-	
+	redisConn := a.redisPool.Get()
+	defer redisConn.Close()
+
 	fullDates := []string{}
 
 	for _, plugin := range plugins {
 		key := plugin + ":fulldate:*"
 
-		res, err := redis.Strings(a.redisConn.Do("KEYS", key))
+		res, err := redis.Strings(redisConn.Do("KEYS", key))
 		if err != nil {
 			if err == redis.ErrNil {
 				return []string{}, &ItemNotFoundError{Description:"No item with that key found"}
