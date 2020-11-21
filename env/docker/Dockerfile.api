@@ -25,9 +25,9 @@ COPY src/ /home/mindfulbytes/src
 COPY js   /home/mindfulbytes/js
 COPY html  /home/mindfulbytes/html
 COPY css /home/mindfulbytes/css
-COPY env/docker/entrypoint_web.sh /home/mindfulbytes/bin/entrypoint_web.sh
+COPY env/docker/entrypoint_api.sh /home/mindfulbytes/bin/entrypoint_api.sh
 
-RUN cd /home/mindfulbytes/src && go build web.go && mv web /home/mindfulbytes/bin 
+RUN cd /home/mindfulbytes/src && go build restapi.go && mv restapi /home/mindfulbytes/bin 
 
 # install plugins
 COPY env/docker/install_plugins.py /home/mindfulbytes/src/plugins/install_plugins.py
@@ -37,4 +37,4 @@ RUN python3 /home/mindfulbytes/src/plugins/install_plugins.py
 
 WORKDIR /home/mindfulbytes/bin
 
-ENTRYPOINT ["/home/mindfulbytes/bin/entrypoint_web.sh"]
+ENTRYPOINT ["/home/mindfulbytes/bin/entrypoint_api.sh"]

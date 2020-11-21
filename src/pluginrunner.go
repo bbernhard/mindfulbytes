@@ -69,9 +69,11 @@ func main() {
 	}
 
 	for _, plugin := range plugins.GetPlugins() {
-		err = plugins.ExecCrawl(plugin.Exec.CrawlExec)
-		if err != nil {
-			log.Fatal(err)
+		if plugin.Config.Enabled {
+			err = plugins.ExecCrawl(plugin.Exec.CrawlExec)
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	}
 }

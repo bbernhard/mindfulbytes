@@ -60,6 +60,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 	}
 
 	format := c.DefaultQuery("format", "jpg")
+	language := c.DefaultQuery("language", "en")
 
 	plugin := ""
 	if len(plugins) > 0 {
@@ -106,8 +107,16 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 		if autoCaption == "true" {
 			timeLayout := "2006-01-02"
 
-			timeagoGermanConfig := timeago.NoMax(timeago.German)
-			timeagoGermanConfig.DefaultLayout = timeLayout
+			var timeagoConfig timeago.Config
+			
+			if language == "en" {
+				timeagoConfig = timeago.NoMax(timeago.English)
+			} else if language == "ge" {
+				timeagoConfig = timeago.NoMax(timeago.German)
+			} else {
+				timeagoConfig = timeago.NoMax(timeago.English)
+			}
+			timeagoConfig.DefaultLayout = timeLayout
 
 			fullDate, err := time.Parse(timeLayout, fullDates[randomNum])
 			if err != nil {
@@ -115,7 +124,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
 				return
 			}
-			caption = timeagoGermanConfig.FormatReference(fullDate, time.Now())
+			caption = timeagoConfig.FormatReference(fullDate, time.Now())
 		}
 
 		dataEntries, err := apiClient.GetDataForFullDate(plugins, randomFullDate)

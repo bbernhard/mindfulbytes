@@ -26,6 +26,7 @@ type PluginMetaData struct {
 }
 
 type PluginConfig struct {
+	Enabled bool `yaml:"enabled"`
 	Refresh string `yaml:"refresh"`
 	Args map[string]string `yaml:"args"`
 }

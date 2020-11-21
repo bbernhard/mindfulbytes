@@ -10,7 +10,7 @@ RUN wget https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3
 COPY src/ /home/mindfulbytes/src
 COPY env/docker/entrypoint_notifier.sh /home/mindfulbytes/bin/entrypoint_notifier.sh
 
-RUN cd /home/mindfulbytes/src && go build notifier.go && mv web /home/mindfulbytes/bin 
+RUN cd /home/mindfulbytes/src && go build notifier.go && mv notifier /home/mindfulbytes/bin 
 
 #USER mindfulbytes
 
