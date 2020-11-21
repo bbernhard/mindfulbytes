@@ -4,8 +4,10 @@ import (
 	"github.com/jordan-wright/email"
 	"github.com/bbernhard/mindfulbytes/config"
 	"github.com/bbernhard/mindfulbytes/api"
+	"github.com/bbernhard/mindfulbytes/utils"
 	"net/smtp"
 	"bytes"
+	"time"
 	"github.com/gabriel-vasile/mimetype"
 )
 
@@ -36,12 +38,23 @@ func (s *Email) Notify() error {
 		topics := s.notification.Topics
 		for _, topic := range topics {
 
-			data, err := s.externalApiClient.GetRandomImage(topic)
+			imageData, err := s.externalApiClient.GetImageTodayOrRandomWithData(topic)
 			if err != nil {
 				return err
 			}
 
-			mime, err := mimetype.DetectReader(bytes.NewReader(data))
+			layout := "2006-01-02"
+			date, err := time.Parse(layout, imageData.FullDate)
+			if err != nil {
+				return err
+			}
+
+			message, err := utils.ReplaceTagsInMessage(s.notification.Message, date, "en") //TODO change default lang
+			if err != nil {
+				return err
+			}
+
+			mime, err := mimetype.DetectReader(bytes.NewReader(imageData.Image))
 			if err != nil {
 				return err
 			}
@@ -49,9 +62,10 @@ func (s *Email) Notify() error {
 			e := email.NewEmail()
 			e.From = sender
 			e.To = recipients
+			e.Text = []byte(message)
 			e.Subject = "MindfulBytes"
 
-			_, err = e.Attach(bytes.NewReader(data), "mindfulbytes"+mime.Extension(), mime.String())
+			_, err = e.Attach(bytes.NewReader(imageData.Image), "mindfulbytes"+mime.Extension(), mime.String())
 			if err != nil {
 				return err
 			}

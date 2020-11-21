@@ -2,11 +2,13 @@ package notifications
 
 import (
 	"github.com/bbernhard/mindfulbytes/config"
+	"github.com/bbernhard/mindfulbytes/utils"
 	"github.com/bbernhard/mindfulbytes/api"
 	log "github.com/sirupsen/logrus"
 	"encoding/base64"
 	"github.com/go-resty/resty/v2"
 	"errors"
+	"time"
 )
 
 type SignalMessenger struct {
@@ -29,7 +31,7 @@ func (s *SignalMessenger) IsEnabled() bool {
 	return s.notification.Enabled
 }
 
-func (s *SignalMessenger) sendMessage(attachment []byte, recipients []string) error {
+func (s *SignalMessenger) sendMessage(message string, attachment []byte, recipients []string) error {
 	type Body struct {
 		Message string `json:"message"`
 		Number string `json:"number"`
@@ -39,7 +41,7 @@ func (s *SignalMessenger) sendMessage(attachment []byte, recipients []string) er
 
 	base64EncodedAttachment := base64.StdEncoding.EncodeToString(attachment)
 
-	body := &Body{Message: "", Number: s.notification.Settings["number"], Recipients: s.notification.Recipients}
+	body := &Body{Message: message, Number: s.notification.Settings["number"], Recipients: s.notification.Recipients}
 	body.Base64EncodedAttachments = append(body.Base64EncodedAttachments, base64EncodedAttachment)
 
 	url := s.signalMessengerRestApiBaseUrl + "/send"
@@ -64,11 +66,24 @@ func (s *SignalMessenger) Notify() error {
 		recipients := s.notification.Recipients
 		topics := s.notification.Topics
 		for _, topic := range topics {
-			bytes, err := s.externalApiClient.GetRandomImage(topic)
+			
+			imageData, err := s.externalApiClient.GetImageTodayOrRandomWithData(topic)
 			if err != nil {
 				return err
 			}
-			err = s.sendMessage(bytes, recipients)
+
+			layout := "2006-01-02"
+			date, err := time.Parse(layout, imageData.FullDate)
+			if err != nil {
+				return err
+			}
+
+			message, err := utils.ReplaceTagsInMessage(s.notification.Message, date, "en") //TODO change default lang
+			if err != nil {
+				return err
+			}
+
+			err = s.sendMessage(message, imageData.Image, recipients)
 			if err != nil {
 				return err
 			}

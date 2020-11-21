@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"os"
 	"bytes"
+	"math/rand"
 	"github.com/bbernhard/mindfulbytes/config"
 	"github.com/gomodule/redigo/redis"
 	log "github.com/sirupsen/logrus"
@@ -16,6 +17,12 @@ import (
 
 type scheduleNotificationFuncDef func(string, config.Notification) error
 type schedulePluginExecFuncDef func(plugin Plugin, plugins *Plugins) error
+
+func GetRandomNumber(max int) int {
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	return r1.Intn(max)
+}
 
 func StringInSlice(a string, list []string) bool {
     for _, b := range list {

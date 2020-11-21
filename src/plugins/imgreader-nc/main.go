@@ -24,6 +24,7 @@ type FileInfo struct {
 type DataEntry struct {
 	Uri string `json:"uri"`
 	Uuid string `json:"uuid"`
+	FullDate string `json:"fulldate"`
 }
 
 type OutputSplitter struct{}
@@ -131,7 +132,7 @@ func crawl(redisAddress string, redisMaxConnections int, nextcloudWebDavUrl stri
 
 		date := file.ModificationTime.Format("01-02")
 		fullDate := file.ModificationTime.Format("2006-01-02")
-		dataEntry := DataEntry{Uri: file.Path, Uuid: u.String()}
+		dataEntry := DataEntry{Uri: file.Path, Uuid: u.String(), FullDate: fullDate}
 
 		if _, ok := imagesPerDate[date]; ok {
 			imagesPerDate[date] = append(imagesPerDate[date], dataEntry)

@@ -12,20 +12,20 @@ function getDataForDate(api, date) {
         });
 }
 
-function displayData(api, data, date) {
+function displayData(api, data) {
     var imageUrl = api.getImageUrlFromId(data.plugin, data.uuid);
 
-	var myImage = new Image();
-	myImage.onload = function() {
-		$("#img").height(this.height);
-		$("#img").width(this.width);
-		$("#img").attr("src", this.src);
-	}
-	//myImage.onerror = loadFailure;
-	myImage.src = imageUrl;
+    var myImage = new Image();
+    myImage.onload = function() {
+        $("#img").height(this.height);
+        $("#img").width(this.width);
+        $("#img").attr("src", this.src);
+    }
+    //myImage.onerror = loadFailure;
+    myImage.src = imageUrl;
 
-    $("#when").text(moment(date).fromNow() + " this picture was taken");
-    $("#whenDetailed").text(date);
+    $("#when").text(moment(data.fulldate).fromNow() + " this picture was taken");
+    $("#whenDetailed").text(data.fulldate);
 }
 
 $(document).ready(function() {
@@ -46,7 +46,7 @@ $(document).ready(function() {
                             api.getDataForFullDate("imgreader", randomDate)
                                 .then(function(dataForDate) {
                                     let randomPos = randomInt(0, dataForDate.response.length - 1);
-                                    displayData(api, dataForDate.response[randomPos], randomDate);
+                                    displayData(api, dataForDate.response[randomPos]);
                                 })
 
                                 .catch(function(e) {
@@ -58,7 +58,8 @@ $(document).ready(function() {
                         console.error(e.stack);
                     });
             } else { //found something for today
-                displayData(api, data, moment().format("YYYY-MM-DD"));
+                let randomPos = data.response[randomInt(0, data.length - 1)];
+                displayData(api, data.response[randomPos]);
             }
         })
 

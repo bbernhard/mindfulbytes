@@ -33,6 +33,7 @@ type Entry struct {
 	Uri string `json:"uri"`
 	Uuid string `json:"uuid"`
 	Plugin string `json:"plugin"`
+	FullDate string `json:"fulldate,omitempty"`
 }
 
 type Api struct {

@@ -7,14 +7,7 @@ import (
 	"strings"
 	"strconv"
 	"time"
-	"math/rand"
 )
-
-func getRandomNumber(max int) int {
-	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
-	return r1.Intn(max)
-}
 
 func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId string) {
 	grayscale := false
@@ -78,7 +71,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 			return
 		}
 		if len(todaysEntries) > 0 {
-			randomNum:= getRandomNumber(len(todaysEntries))
+			randomNum:= utils.GetRandomNumber(len(todaysEntries))
 			imageId = todaysEntries[randomNum].Uuid
 			plugin = todaysEntries[randomNum].Plugin
 		} else {
@@ -100,7 +93,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 			return
 		}
 
-		randomNum := getRandomNumber(len(fullDates))
+		randomNum := utils.GetRandomNumber(len(fullDates))
 		randomFullDate := fullDates[randomNum]
 
 		if autoCaption == "true" {
@@ -129,7 +122,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 			return
 		}
 
-		randomNum = getRandomNumber(len(dataEntries))
+		randomNum = utils.GetRandomNumber(len(dataEntries))
 
 		imageId = dataEntries[randomNum].Uuid
 		plugin = dataEntries[randomNum].Plugin

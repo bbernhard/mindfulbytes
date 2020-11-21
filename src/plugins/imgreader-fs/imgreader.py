@@ -101,15 +101,16 @@ def crawl(directory):
 
                         u = str(uuid.uuid4())
                         date = d.date().strftime("%m-%d")
-                        entry = {"uri": str(filename), "uuid": u}
+                        fulldate = d.date().strftime("%Y-%m-%d")
+
+                        entry = {"uri": str(filename), "uuid": u, "fulldate": fulldate}
                         try: 
                             imgs = images_per_date[date]
                             imgs.append(entry)
                             images_per_date[date] = imgs
                         except KeyError:
                             images_per_date[date] = [entry]
-
-                        fulldate = d.date().strftime("%Y-%m-%d")
+ 
                         try: 
                             imgs = images_per_fulldate[fulldate]
                             imgs.append(entry)
