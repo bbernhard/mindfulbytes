@@ -2,7 +2,6 @@ function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-
 function getDataForDate(api, date) {
     api.getDataForDate("imgreader", date)
         .then(function(data) {
@@ -15,7 +14,15 @@ function getDataForDate(api, date) {
 
 function displayData(api, data, date) {
     var imageUrl = api.getImageUrlFromId(data.plugin, data.uuid);
-    $("#img").attr("src", imageUrl);
+
+	var myImage = new Image();
+	myImage.onload = function() {
+		$("#img").height(this.height);
+		$("#img").width(this.width);
+		$("#img").attr("src", this.src);
+	}
+	//myImage.onerror = loadFailure;
+	myImage.src = imageUrl;
 
     $("#when").text(moment(date).fromNow() + " this picture was taken");
     $("#whenDetailed").text(date);

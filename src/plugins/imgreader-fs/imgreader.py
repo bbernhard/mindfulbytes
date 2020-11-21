@@ -79,15 +79,20 @@ def crawl(directory):
             try:
                 img = Image.open(filename)
             except:
+                print("Couldn't process file %s" %filename)
                 continue
-            exif_data = img._getexif()
+
+
+            #get the timestamp from the EXIF data
+            datetime_str = None
+            exif_data = img.getexif()
             if exif_data is not None:
+                datetime_str = exif_data.get(36867)
+            
+            if datetime_str is not None:  
                 try:
-                    datetime_str = exif_data[36867]
                     datetime_str = datetime_str.strip(" ")
                     if datetime_str != "":
-                        
-
                         try:
                             d = datetime.strptime(datetime_str,"%Y:%m:%d %H:%M:%S")
                         except ValueError:
@@ -115,6 +120,9 @@ def crawl(directory):
                         redis_client.set(TOPIC+":image:" + u, str(filename))
                 except KeyError:
                     pass
+            else:
+                print("No EXIF data found for image %s" %filename)
+
 
     for key, value in images_per_date.items():
         redis_client.set(TOPIC+":date:" + key, json.dumps(value))

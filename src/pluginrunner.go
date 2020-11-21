@@ -74,6 +74,8 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
+		} else {
+			log.Debug("Not running plugin ", plugin.Name, " as it is disabled")
 		}
 	}
 }

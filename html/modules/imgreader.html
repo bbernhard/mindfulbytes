@@ -5,17 +5,27 @@
 
 <style>
 .has-image-centered {
-  margin-left: auto;
-  margin-right: auto;
+  width: intrinsic;           /* Safari/WebKit uses a non-standard name */
+  width: -moz-max-content;    /* Firefox/Gecko */
+  width: -webkit-max-content; /* Chrome */
 }
+
+.image {
+	max-width: 100%; width: auto;
+}
+
 </style>
 
 <section class="section">
   <div class="container">
     <h1 class="title has-text-centered" id="when"></h1>
-	<h2 class="subtitle has-text-centered" id="whenDetailed"></h2>
-	<figure class="image has-image-centered">
-	  <img id="img">
-    </figure>
+	<h2 class="subtitle has-text-centered" id="whenDetailed"></h2>	
+    <div class="columns is-centered">
+  	  <div class="column is-narrow">
+	    <figure class="has-image-centered">
+	      <img width="" height="" id="img">
+        </figure>
+      </div>
+	</div>
   </div>
 </section>

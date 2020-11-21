@@ -87,7 +87,6 @@ func getFetchArgPrefix(pluginMetaData PluginMetaData) string {
 func getFetchArgs(pluginMetaData PluginMetaData, pluginConfig PluginConfig) ([]string, error) {
 	args := []string{}
 	for key, value := range pluginConfig.Args {
-		log.Info("key = ", key)
 		argDetails, ok := pluginMetaData.FetchArgs[key]
 		if ok {
 			prefix := ""
