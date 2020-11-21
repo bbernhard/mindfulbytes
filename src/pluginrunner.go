@@ -5,7 +5,22 @@ import (
 	"github.com/bbernhard/mindfulbytes/utils"
 	"github.com/gomodule/redigo/redis"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
+
+func handlePluginExec(plugin utils.Plugin, plugins *utils.Plugins) error {
+	if plugin.Config.Enabled {
+		err := plugins.ExecCrawl(plugin.Exec.CrawlExec)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+	} else {
+		log.Debug("Not running plugin ", plugin.Name, " as it is disabled")
+	}
+	
+	return nil
+}
 
 func main() {
 	log.Info("Starting Plugin Runner")
@@ -30,52 +45,21 @@ func main() {
 	}, *redisMaxConnections)
 	defer redisPool.Close()
 
-	redisConn := redisPool.Get()
-	defer redisConn.Close()
-
-	psc := redis.PubSubConn{Conn: redisConn}
-	defer psc.Close()
-
-	log.Info("Subscribing")
-	if err := psc.Subscribe(redis.Args{}.AddFlat([]string{"imgreader"})...); err != nil {
-		log.Fatal("Couldn't subscribe to topic 'imgreader': ", err.Error())
-	}
-
-	done := make(chan error, 1)
-
-	go func() {
-		for {
-			switch n := psc.Receive().(type) {
-			case error:
-				done <- n
-				return
-			case redis.Message:
-				log.Info(n.Channel)
-			case redis.Subscription:
-				switch n.Count {
-				case 0:
-					// Return from the goroutine when all channels are unsubscribed.
-					done <- nil
-					return
-				}
-			}
-		}
-	}()
-
 	plugins := utils.NewPlugins("./plugins/", *configDir)
 	err := plugins.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	tickers := []*time.Ticker{}
 	for _, plugin := range plugins.GetPlugins() {
-		if plugin.Config.Enabled {
-			err = plugins.ExecCrawl(plugin.Exec.CrawlExec)
-			if err != nil {
-				log.Error(err)
-			}
-		} else {
-			log.Debug("Not running plugin ", plugin.Name, " as it is disabled")
+		t, err := utils.SchedulePluginExecution(handlePluginExec, plugin, plugins, redisPool)
+		if err !=nil {
+			log.Fatal(err.Error())
 		}
+		tickers = append(tickers, t)
+		
 	}
+
+	select {} //wait forever
 }
