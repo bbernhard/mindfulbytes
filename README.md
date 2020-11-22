@@ -104,3 +104,10 @@ The REST API Swagger documentation is available at `http://127.0.0.1:8088/swagge
 ```http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}```
 
 ![Today Or Random With Caption](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/today-or-random-caption.jpeg)
+
+* Format image (for EPaper displays)
+
+```http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}&format=bmp&mode=grayscale```
+
+![Today Or Random For EPaper](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/today-or-random-epaper.bmp)
+

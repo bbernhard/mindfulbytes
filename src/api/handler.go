@@ -10,8 +10,10 @@ import (
 )
 
 func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId string) {
+	mode := c.DefaultQuery("mode", "rgb")
+	
 	grayscale := false
-	if c.DefaultQuery("grayscale", "false") == "true" {
+	if mode == "grayscale" {
 		grayscale = true
 	}
 
