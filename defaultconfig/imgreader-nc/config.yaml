@@ -1,0 +1,5 @@
+enabled: false #set to true, if you want to enable this plugin. otherwise set to false 
+args:
+  nextcloud-webdav-url: https://cloud.example.com/remote.php/dav/files/exampleuser
+  nextcloud-token: xBmIs-JUp9b-HeACR-ARAPZ-WIkTA
+  nextcloud-root-dir: Pictures

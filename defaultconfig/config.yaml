@@ -1,0 +1,30 @@
+notifications:
+  #The signalmessenger notification requires a running signal-cli-rest-api docker container
+  #(see https://github.com/bbernhard/signal-cli-rest-api)
+  signalmessenger:
+    enabled: false #Set to true, if you want to enable the signalmessenger notification. otherwise set to false
+    interval: daily #Supported intervals: daily, weekly, monthly
+    defaultlanguage: en
+    message: This image was created {{ timeago }}.
+    topics:
+      - imgreader
+    settings:
+      number: +43xxxxxx #The registered Signal number
+      url: http://127.0.0.1:8080 #The URL where the signal-cli-rest-api is listening on
+    recipients: #List of recipients 
+      - +49xxxxxx
+
+  email:
+    enabled: false #Set to true, if you want to enable the email notification. otherwise set to false
+    interval: daily #Supported intervals: daily, weekly, monthly 
+    defaultlanguage: en
+    message: This image was created {{ timeago }}.
+    topics:
+      - imgreader
+    settings:
+      host: smtp.example.com #SMTP Server
+      sender: mindfulbytes@example.com #Sender email address
+      password: mysupersupersecurepassword #Sender email password
+      port: 587 #SMTP port 
+    recipients: #List of recipients
+      - recipient@example.com

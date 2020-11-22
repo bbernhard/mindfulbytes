@@ -1,0 +1,4 @@
+enabled: false #set to true, if you want to enable this plugin. otherwise set to false
+args:
+  directory: /images #path to the images directory on the filesystem. if you are using the MindfulBytes docker container, you do not need to change this value.
+
