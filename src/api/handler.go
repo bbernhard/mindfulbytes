@@ -17,18 +17,6 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 
 	caption := c.DefaultQuery("caption", "")
 
-	autoCaption := c.DefaultQuery("auto_caption", "false")
-
-	if autoCaption == "true" && caption != "" {
-		c.JSON(400, gin.H{"error": "Auto caption and caption cannot be set at the same time"})
-		return
-	}
-
-	if autoCaption == "true" && imageId != "random" {
-		c.JSON(400, gin.H{"error": "Auto caption not yet supported here"})
-		return
-	}
-
 	size := c.DefaultQuery("size", "")
 	if size != "" {
 		sizes := strings.Split(size, "x")
@@ -62,6 +50,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 
 	var imgBytes []byte
 
+	fullDate := ""
 	if imageId == "today-or-random" {
 		currentDate := time.Now()
 		currentDateStr := currentDate.Format("01-02")
@@ -74,6 +63,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 			randomNum:= utils.GetRandomNumber(len(todaysEntries))
 			imageId = todaysEntries[randomNum].Uuid
 			plugin = todaysEntries[randomNum].Plugin
+			fullDate = todaysEntries[randomNum].FullDate
 		} else {
 			imageId = "random"
 		}
@@ -95,21 +85,7 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 
 		randomNum := utils.GetRandomNumber(len(fullDates))
 		randomFullDate := fullDates[randomNum]
-
-		if autoCaption == "true" {
-			timeLayout := "2006-01-02"
-
-			timeagoConfig := utils.GetTimeagoConfigForLanguage(language)
-
-			fullDate, err := time.Parse(timeLayout, fullDates[randomNum])
-			if err != nil {
-				log.Error(err.Error())
-				c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-				return
-			}
-			caption = timeagoConfig.FormatReference(fullDate, time.Now())
-		}
-
+ 
 		dataEntries, err := apiClient.GetDataForFullDate(plugins, randomFullDate)
 		if err != nil {
 			log.Error(err.Error())
@@ -126,7 +102,22 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 
 		imageId = dataEntries[randomNum].Uuid
 		plugin = dataEntries[randomNum].Plugin
-	} 
+		fullDate = dataEntries[randomNum].FullDate
+	}
+
+	if fullDate != "" && caption != "" {
+		d, err := utils.ConvertFullDateToTime(fullDate)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		}
+
+		caption, err = utils.ReplaceTagsInMessage(caption, d, language)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		}
+	}
 
 	if plugin == "" {
 		c.JSON(404, gin.H{"error": "No plugin specified"})

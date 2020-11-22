@@ -75,6 +75,32 @@ Ideally, you should see a picture ;-).
 
 ![Web Example](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/web_example.png)
 
-# REST API documentation
 
-The REST API documentation is available at `http://127.0.0.1:8088/swagger/index.html` 
+# Use Cases
+
+Due to the powerful REST API and the built-in notification support, you can display your mindful bytes on almost any device that has a screen. 
+
+Use the built-in notification support to receive your daily mindful bytes via Signal or Email. 
+
+![Signal Notification](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/signal_notification.jpg)
+
+![Email Notification](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/email_notification.jpg)
+
+# REST API
+
+The REST API Swagger documentation is available at `http://127.0.0.1:8088/swagger/index.html` 
+
+## Examples
+
+* Get an image that was created at this date x years ago, or if nothing found, a random image
+
+```curl -X GET http://127.0.0.1:8088/v1/topics/imgreader/images/today-or-random```
+
+![Today Or Random](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/today-or-random.jpeg)
+
+
+* Add a caption to the image
+
+```http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}```
+
+![Today Or Random With Caption](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/today-or-random-caption.jpeg)

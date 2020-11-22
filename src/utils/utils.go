@@ -68,6 +68,11 @@ func GetTimeagoConfigForLanguage(language string) timeago.Config {
 	return timeagoConfig
 }
 
+func ConvertFullDateToTime(fullDate string) (time.Time, error) {
+	timeLayout := "2006-01-02"
+	return time.Parse(timeLayout, fullDate)
+}
+
 func ReplaceTagsInMessage(template string, timestamp time.Time, language string) (string, error) {
 	s := template
 	r := regexp.MustCompile("(\\{\\{[ ]*[a-z]*[ ]*\\}\\})*")
