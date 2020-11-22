@@ -12,6 +12,7 @@ type Notification struct {
 	Topics []string `yaml:"topics"`
 	Interval string `yaml:"interval"`
 	Settings map[string]string `yaml:"settings"`
+	DefaultLanguage string `yaml:"defaultlanguage"`
 }
 
 type Config struct {

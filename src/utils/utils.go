@@ -209,7 +209,8 @@ func SchedulePluginExecution(f schedulePluginExecFuncDef, plugin Plugin, plugins
 }
 
 
-func ScheduleNotification(f scheduleNotificationFuncDef, name string, notification config.Notification, redisPool *redis.Pool) (*time.Ticker, error) {
+func ScheduleNotification(f scheduleNotificationFuncDef, name string, notification config.Notification,
+		redisPool *redis.Pool) (*time.Ticker, error) {
 	defaultInterval, err := FuzzyTimeToDuration(notification.Interval)
 	if err != nil {
 		return &time.Ticker{}, errors.New("Couldn't initialize " + name + " notification: " + err.Error())

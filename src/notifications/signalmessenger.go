@@ -78,7 +78,7 @@ func (s *SignalMessenger) Notify() error {
 				return err
 			}
 
-			message, err := utils.ReplaceTagsInMessage(s.notification.Message, date, "en") //TODO change default lang
+			message, err := utils.ReplaceTagsInMessage(s.notification.Message, date, s.notification.DefaultLanguage) 
 			if err != nil {
 				return err
 			}
