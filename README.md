@@ -73,7 +73,7 @@ When the scanning is done, navigate to `http://127.0.0.1:8088` with your web bro
 
 Ideally, you should see a picture ;-).
 
-![Web Example](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/web_example.png)
+![Web Example](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/web_demo.png)
 
 
 # Use Cases
