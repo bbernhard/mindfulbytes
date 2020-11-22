@@ -114,8 +114,6 @@ func main() {
 	router.Static("./js", "../js")   //serve javascript files
 	router.Static("./css", "../css") //serve css files
 
-	router.Static("./img", "../img")
-
 	router.SetHTMLTemplate(tmpl)
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
