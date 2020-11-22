@@ -2,3 +2,4 @@ src/pluginrunner
 src/web
 src/plugins/imgreader-nc/main
 config
+env/docker/docker-compose.yml
