@@ -4,3 +4,5 @@ src/plugins/imgreader-nc/main
 config
 env/docker/docker-compose.yml
 src/restapi
+src/pluginrunner
+src/notifier
