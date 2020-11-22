@@ -1,0 +1,54 @@
+version: "3.4"
+
+x-globalenv: &globalenv
+  REDIS_ADDRESS: redis:6379
+  WAIT_HOSTS: redis:6379
+  BASE_URL: http://127.0.0.1:8088
+
+
+services:
+  redis:
+    hostname: redis
+    ports:
+      - 6380:6379
+    image: redis 
+    
+    #store data persistent
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+  api:
+   hostname: api
+   environment: *globalenv
+   ports:
+     - 8088:8085
+   build:
+     context: "../../"
+     dockerfile: env/docker/Dockerfile.api
+   volumes:
+     - ../../config:/home/mindfulbytes/config 
+     - /tmp/images/:/images:ro #mounts the /tmp/images folder on the host system to /pictures in the docker container. change the /tmp/images folder accordingly.
+  
+  notifier:
+   hostname: notifier
+   environment: *globalenv
+   build:
+     context: "../../"
+     dockerfile: env/docker/Dockerfile.notifier
+   volumes:
+     - ../../config:/home/mindfulbytes/config
+
+  
+  pluginrunner:
+   hostname: pluginrunner
+   environment: *globalenv
+   build:
+     context: "../../"
+     dockerfile: env/docker/Dockerfile.pluginrunner
+   volumes:
+     - ../../config:/home/mindfulbytes/config
+     - /tmp/images/:/images:ro #mounts the /tmp/images folder on the host system to /pictures in the docker container. change the /tmp/images folder accordingly.
+
+volumes:
+  redis-data:
