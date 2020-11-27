@@ -114,6 +114,8 @@ func main() {
 	router.Static("./js", "../js")   //serve javascript files
 	router.Static("./css", "../css") //serve css files
 
+	//router.Static("./img", "../img")
+
 	router.SetHTMLTemplate(tmpl)
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
@@ -133,6 +135,7 @@ func main() {
 			topicsGroup.GET("/:topic/dates/:date", requestHandler.GetDateDataForTopic)
 			topicsGroup.GET("/:topic/images/random", requestHandler.GetRandomImageForTopic)
 			topicsGroup.GET("/:topic/images/today-or-random", requestHandler.GetTodayOrRandomImageForTopic)
+			topicsGroup.POST("/:topic/images/today-or-random/cache", requestHandler.CacheTodayOrRandomImage)
 		}
 
 		pluginsGroup := v1.Group("/plugins")
@@ -143,6 +146,11 @@ func main() {
 			pluginsGroup.GET("/:plugin/fulldates", requestHandler.GetFullDatesForPlugin)
 			pluginsGroup.GET("/:plugin/fulldates/:fulldate", requestHandler.GetFullDateDataForPlugin)
 			pluginsGroup.GET("/:plugin/images/:imageid", requestHandler.GetImageForPlugin)
+		}
+
+		cacheGroup := v1.Group("/cache")
+		{
+			cacheGroup.GET("/:cacheid", requestHandler.GetCachedEntry)
 		}
 	}
 

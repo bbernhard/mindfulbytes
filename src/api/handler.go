@@ -7,9 +7,21 @@ import (
 	"strings"
 	"strconv"
 	"time"
+	"github.com/gofrs/uuid"
+	"github.com/gabriel-vasile/mimetype"
+	"bytes"
 )
 
-func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId string) {
+type ImageFetchError struct {
+	Description string
+	StatusCode int
+}
+
+func (e *ImageFetchError) Error() string {
+	return e.Description
+}
+
+func parseGetImageRequest(c *gin.Context, apiClient *Api, plugins []string, imageId string) (string, string, utils.ConvertOptions, error) {
 	mode := c.DefaultQuery("mode", "rgb")
 	
 	grayscale := false
@@ -24,20 +36,17 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 		sizes := strings.Split(size, "x")
 
 		if len(sizes) != 2 {
-			c.JSON(400, gin.H{"error": "Couldn't process request - invalid image size"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 400, Description: "Couldn't process request - invalid image size"}
 		}
 
 		_, err := strconv.Atoi(sizes[0])
 		if err != nil {
-			c.JSON(400, gin.H{"error": "Couldn't process request - invalid image width"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 400, Description: "Couldn't process request - invalid image width"}
 		}
 
 		_, err = strconv.Atoi(sizes[1])
 		if err != nil {
-			c.JSON(400, gin.H{"error": "Couldn't process request - invalid image height"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 400, Description: "Couldn't process request - invalid image height"}
 		}
 	}
 
@@ -49,17 +58,13 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 		plugin = plugins[0]
 	}
 
-
-	var imgBytes []byte
-
 	fullDate := ""
 	if imageId == "today-or-random" {
 		currentDate := time.Now()
 		currentDateStr := currentDate.Format("01-02")
 		todaysEntries, err := apiClient.GetDataForDate(plugins, currentDateStr)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 500, Description: "Couldn't process request - please try again later"}
 		}
 		if len(todaysEntries) > 0 {
 			randomNum:= utils.GetRandomNumber(len(todaysEntries))
@@ -76,13 +81,11 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 		fullDates, err := apiClient.GetFullDates(plugins)
 		if err != nil {
 			log.Error(err.Error())
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 500, Description: "Couldn't process request - please try again later"}
 		}
 
 		if len(fullDates) == 0 {
-			c.JSON(400, gin.H{"error": "No images for plugin(s) " + strings.Join(plugins, ",") + " found"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 400, Description: "No images for plugin(s) " + strings.Join(plugins, ",") + " found"}
 		}
 
 		randomNum := utils.GetRandomNumber(len(fullDates))
@@ -91,13 +94,11 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 		dataEntries, err := apiClient.GetDataForFullDate(plugins, randomFullDate)
 		if err != nil {
 			log.Error(err.Error())
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 500, Description: "Couldn't process request - please try again later"}
 		}
 
 		if len(dataEntries) == 0 {
-			c.JSON(404, gin.H{"error": "No images found"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 404, Description: "No images found"}
 		}
 
 		randomNum = utils.GetRandomNumber(len(dataEntries))
@@ -110,24 +111,42 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 	if fullDate != "" && caption != "" {
 		d, err := utils.ConvertFullDateToTime(fullDate)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 500, Description: "Couldn't process request - please try again later"}
 		}
 
 		caption, err = utils.ReplaceTagsInMessage(caption, d, language)
 		if err != nil {
+			return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 500, Description: "Couldn't process request - please try again later"}
+		}
+	}
+
+	if plugin == "" {
+		return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 404, Description: "No plugin specified"}
+	}
+
+	convertOptions := utils.ConvertOptions{Size: size, Caption: caption, Grayscale: grayscale, Format: format}
+	return plugin, imageId, convertOptions, nil
+}
+
+func getImage(apiClient *Api, plugin string, imageId string, convertOptions utils.ConvertOptions) ([]byte, string, error) {
+	imgBytes, mimeType, err := apiClient.GetImage(plugin, imageId, convertOptions)
+	return imgBytes, mimeType, err
+}
+
+func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId string) {
+	plugin, imageId, convertOptions, err := parseGetImageRequest(c, apiClient, plugins, imageId)
+	if err != nil {
+		switch err.(type) {
+		case *ImageFetchError:
+			c.JSON(err.(*ImageFetchError).StatusCode, gin.H{"error": err.Error()})
+		default:
 			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
 			return
 		}
 	}
 
-	if plugin == "" {
-		c.JSON(404, gin.H{"error": "No plugin specified"})
-		return
-	}
 
-	convertOptions := utils.ConvertOptions{Size: size, Caption: caption, Grayscale: grayscale, Format: format}
-	imgBytes, mimeType, err := apiClient.GetImage(plugin, imageId, convertOptions)
+	imgBytes, mimeType, err := getImage(apiClient, plugin, imageId, convertOptions)
 	if err != nil {
 		switch err.(type) {
 		case *InternalServerError:
@@ -520,3 +539,84 @@ func (h *RequestHandler) GetImageForPlugin(c *gin.Context) {
 	deliverImage(c, h.apiClient, []string{plugin}, imageId)
 }
 
+func (h *RequestHandler) CacheTodayOrRandomImage(c *gin.Context) {
+	h.CacheImage(c, "today-or-random")
+}
+
+func (h *RequestHandler) CacheImage(c *gin.Context, imageId string) {
+	topic := c.Param("topic")
+
+	topics := h.plugins.GetTopics()
+	plugins, exists := topics[topic]
+	if !exists {
+		c.JSON(404, gin.H{"error": "No plugins for that topic found"})
+		return
+	}
+	
+	plugin, imageId, convertOptions, err := parseGetImageRequest(c, h.apiClient, plugins, imageId)
+	if err != nil {
+		switch err.(type) {
+		case *ImageFetchError:
+			c.JSON(err.(*ImageFetchError).StatusCode, gin.H{"error": err.Error()})
+		default:
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		}
+	}
+
+	cacheId, err := uuid.NewV4()
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+		return
+	}
+
+	c.JSON(201, gin.H{"cacheid": cacheId.String()})
+
+	go func(apiClient *Api, plugin string, imageId string, convertOptions utils.ConvertOptions, cacheId string) {
+		imgBytes, _, err := getImage(apiClient, plugin, imageId, convertOptions)
+		if err == nil {
+			err = apiClient.CacheEntry(cacheId, imgBytes)
+			if err != nil {
+				log.Error("Couldn't create cache entry with id ", cacheId, ": ", err.Error())
+			}
+		} else {
+			log.Error("Couldn't create cache entry with id ", cacheId, ": ", err.Error())
+		}
+	}(h.apiClient, plugin, imageId, convertOptions, cacheId.String())
+
+}
+
+func (h *RequestHandler) GetCachedEntry(c *gin.Context) {
+	cacheId := c.Param("cacheid")
+	imgBytes, err := h.apiClient.GetCachedEntry(cacheId)
+	if err != nil {
+		switch err.(type) {
+		case *InternalServerError:
+			log.Error(err.Error())
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		case *ItemNotFoundError:
+			c.JSON(404, gin.H{"error": "No cache entry with that id found"})
+			return
+		default:
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		}
+	}
+
+	mime, err := mimetype.DetectReader(bytes.NewReader(imgBytes))
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(500, gin.H{"error": "Couldn't detect MIME type for cache entry with id " + cacheId})
+		return
+	}
+	
+	c.Writer.Header().Set("Content-Type", mime.String())
+	c.Writer.Header().Set("Content-Length", strconv.Itoa(len(imgBytes)))
+	_, err = c.Writer.Write(imgBytes)
+	if err != nil {
+		log.Error("Couldn't serve image: ", err.Error())
+		return
+	}
+
+}

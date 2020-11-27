@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"github.com/gabriel-vasile/mimetype"
 	"bytes"
+	//
 )
 
 type InternalServerError struct {
@@ -249,3 +250,29 @@ func (a *Api) GetFullDates(plugins []string) ([]string, error) {
 	return fullDates, nil
 }
 
+func (a *Api) GetCachedEntry(cacheId string) ([]byte, error) {
+	key := "cache:" + cacheId
+
+	redisConn := a.redisPool.Get()
+	defer redisConn.Close()
+	
+	bytes, err := redis.Bytes(redisConn.Do("GET", key))
+	if err != nil {
+		if err == redis.ErrNil {
+			return []byte{}, &ItemNotFoundError{Description:"No item with that key found"}
+		}
+		return []byte{}, &InternalServerError{Description: "Couldn't get key: " + err.Error()}
+	}
+
+	return bytes, nil
+}
+
+func (a *Api) CacheEntry(cacheId string, data []byte) error {
+	key := "cache:" + cacheId
+	
+	redisConn := a.redisPool.Get()
+	defer redisConn.Close()
+	
+	_, err := redisConn.Do("SET", key, data)
+	return err
+}
