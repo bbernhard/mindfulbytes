@@ -99,7 +99,7 @@ func main() {
 
 	imageMagickWrapper := utils.NewImageMagickWrapper("/usr/bin/magick", *tmpDir+"/")
 	apiClient := api.NewApi(redisPool, imageMagickWrapper, plugins, *tmpDir)
-	requestHandler := api.NewRequestHandler(apiClient, plugins)
+	requestHandler := api.NewRequestHandler(*baseUrl, apiClient, plugins)
 
 	var tmpl *template.Template
 	funcMap := template.FuncMap{}
@@ -135,7 +135,6 @@ func main() {
 			topicsGroup.GET("/:topic/dates/:date", requestHandler.GetDateDataForTopic)
 			topicsGroup.GET("/:topic/images/random", requestHandler.GetRandomImageForTopic)
 			topicsGroup.GET("/:topic/images/today-or-random", requestHandler.GetTodayOrRandomImageForTopic)
-			topicsGroup.POST("/:topic/images/today-or-random/cache", requestHandler.CacheTodayOrRandomImage)
 		}
 
 		pluginsGroup := v1.Group("/plugins")
@@ -152,6 +151,7 @@ func main() {
 		{
 			cacheGroup.GET("/:cacheid", requestHandler.GetCachedEntry)
 			cacheGroup.GET("", requestHandler.GetCacheEntries)
+			cacheGroup.POST("", requestHandler.CacheEntry)
 		}
 	}
 

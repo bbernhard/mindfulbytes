@@ -44,6 +44,11 @@ type Api struct {
 	tmpDir string
 }
 
+type CacheEntryRequest struct {
+	UrlPath string `json:"urlpath"`
+	ExpiresInSeconds int `json:"expires"`
+}
+
 func NewApi(redisPool *redis.Pool, imageMagickWrapper *utils.ImageMagickWrapper, plugins *utils.Plugins, tmpDir string) *Api {
 	return &Api{
 		redisPool: redisPool,

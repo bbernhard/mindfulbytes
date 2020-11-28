@@ -10,6 +10,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/gabriel-vasile/mimetype"
 	"bytes"
+	"github.com/go-resty/resty/v2"
 )
 
 type ImageFetchError struct {
@@ -173,12 +174,14 @@ func deliverImage(c *gin.Context, apiClient *Api, plugins []string, imageId stri
 
 
 type RequestHandler struct {
+	baseUrl string
 	apiClient *Api
 	plugins *utils.Plugins
 }
 
-func NewRequestHandler(apiClient *Api, plugins *utils.Plugins) *RequestHandler {
+func NewRequestHandler(baseUrl string, apiClient *Api, plugins *utils.Plugins) *RequestHandler {
 	return &RequestHandler{
+		baseUrl : baseUrl,
 		apiClient: apiClient,
 		plugins: plugins,
 	}
@@ -539,31 +542,22 @@ func (h *RequestHandler) GetImageForPlugin(c *gin.Context) {
 	deliverImage(c, h.apiClient, []string{plugin}, imageId)
 }
 
-func (h *RequestHandler) CacheTodayOrRandomImage(c *gin.Context) {
-	h.CacheImage(c, "today-or-random")
-}
-
-func (h *RequestHandler) CacheImage(c *gin.Context, imageId string) {
-	topic := c.Param("topic")
-
-	topics := h.plugins.GetTopics()
-	plugins, exists := topics[topic]
-	if !exists {
-		c.JSON(404, gin.H{"error": "No plugins for that topic found"})
+func (h *RequestHandler) CacheEntry(c *gin.Context) {
+	var cacheEntryRequest CacheEntryRequest
+	err := c.BindJSON(&cacheEntryRequest)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
 		return
 	}
 
-	expiresInSeconds := 30 * 60 //half an hour
-	
-	plugin, imageId, convertOptions, err := parseGetImageRequest(c, h.apiClient, plugins, imageId)
-	if err != nil {
-		switch err.(type) {
-		case *ImageFetchError:
-			c.JSON(err.(*ImageFetchError).StatusCode, gin.H{"error": err.Error()})
-		default:
-			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
-			return
-		}
+	if cacheEntryRequest.UrlPath == "" {
+		c.JSON(400, gin.H{"error": "Couldn't process request - urlpath needs to beset"})
+		return
+	}
+
+	defaultExpiresInSeconds := 30 * 60 //default expirationTime
+	if cacheEntryRequest.ExpiresInSeconds == 0 {
+		cacheEntryRequest.ExpiresInSeconds = defaultExpiresInSeconds
 	}
 
 	cacheId, err := uuid.NewV4()
@@ -574,18 +568,26 @@ func (h *RequestHandler) CacheImage(c *gin.Context, imageId string) {
 
 	c.JSON(201, gin.H{"cacheid": cacheId.String()})
 
-	go func(apiClient *Api, plugin string, imageId string, convertOptions utils.ConvertOptions, cacheId string, expiresInSeconds int) {
-		imgBytes, _, err := getImage(apiClient, plugin, imageId, convertOptions)
-		if err == nil {
-			err = apiClient.CacheEntry(cacheId, imgBytes, expiresInSeconds)
-			if err != nil {
-				log.Error("Couldn't create cache entry with id ", cacheId, ": ", err.Error())
-			}
-		} else {
+	go func(apiClient *Api, baseUrl string, cacheId string, cacheEntryRequest CacheEntryRequest) {
+		url := baseUrl + cacheEntryRequest.UrlPath
+		log.Info("url = ", url)
+
+		resp, err := resty.New().R().
+						Get(url)
+		if err != nil {
+			log.Error("Couldn't create cache entry with id ", cacheId, ": ", err.Error())
+			return
+		}
+		if resp.StatusCode() != 200 {
+			log.Error("Couldn't create cache entry with id ", cacheId, ": invalid response")
+			return
+		}
+
+		err = apiClient.CacheEntry(cacheId, resp.Body(), cacheEntryRequest.ExpiresInSeconds)
+		if err != nil {
 			log.Error("Couldn't create cache entry with id ", cacheId, ": ", err.Error())
 		}
-	}(h.apiClient, plugin, imageId, convertOptions, cacheId.String())
-
+	}(h.apiClient, h.baseUrl, cacheId.String(), cacheEntryRequest)
 }
 
 func (h *RequestHandler) GetCachedEntry(c *gin.Context) {
