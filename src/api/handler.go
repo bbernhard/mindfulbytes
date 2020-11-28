@@ -552,6 +552,8 @@ func (h *RequestHandler) CacheImage(c *gin.Context, imageId string) {
 		c.JSON(404, gin.H{"error": "No plugins for that topic found"})
 		return
 	}
+
+	expiresInSeconds := 30 * 60 //half an hour
 	
 	plugin, imageId, convertOptions, err := parseGetImageRequest(c, h.apiClient, plugins, imageId)
 	if err != nil {
@@ -572,10 +574,10 @@ func (h *RequestHandler) CacheImage(c *gin.Context, imageId string) {
 
 	c.JSON(201, gin.H{"cacheid": cacheId.String()})
 
-	go func(apiClient *Api, plugin string, imageId string, convertOptions utils.ConvertOptions, cacheId string) {
+	go func(apiClient *Api, plugin string, imageId string, convertOptions utils.ConvertOptions, cacheId string, expiresInSeconds int) {
 		imgBytes, _, err := getImage(apiClient, plugin, imageId, convertOptions)
 		if err == nil {
-			err = apiClient.CacheEntry(cacheId, imgBytes)
+			err = apiClient.CacheEntry(cacheId, imgBytes, expiresInSeconds)
 			if err != nil {
 				log.Error("Couldn't create cache entry with id ", cacheId, ": ", err.Error())
 			}
@@ -618,5 +620,21 @@ func (h *RequestHandler) GetCachedEntry(c *gin.Context) {
 		log.Error("Couldn't serve image: ", err.Error())
 		return
 	}
+}
 
+func (h *RequestHandler) GetCacheEntries(c *gin.Context) {
+	cacheEntries, err := h.apiClient.GetCacheEntries()
+	if err != nil {
+		switch err.(type) {
+		case *InternalServerError:
+			log.Error(err.Error())
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		default:
+			c.JSON(500, gin.H{"error": "Couldn't process request - please try again later"})
+			return
+		}
+	}
+
+	c.JSON(200, cacheEntries)
 }

@@ -211,7 +211,7 @@ func (a *Api) GetDates(plugins []string) ([]string, error) {
 
 		
 		for _, elem := range res {
-			date := strings.TrimLeft(elem, plugin + ":date:")
+			date := strings.TrimPrefix(elem, plugin + ":date:")
 			if !utils.StringInSlice(date, dates) {
 				dates = append(dates, date)
 			}
@@ -240,7 +240,7 @@ func (a *Api) GetFullDates(plugins []string) ([]string, error) {
 		}
 
 		for _, elem := range res {
-			fullDate := strings.TrimLeft(elem, plugin + ":fulldate:")
+			fullDate := strings.TrimPrefix(elem, plugin + ":fulldate:")
 			if !utils.StringInSlice(fullDate, fullDates) {
 				fullDates = append(fullDates, fullDate)
 			}
@@ -267,12 +267,38 @@ func (a *Api) GetCachedEntry(cacheId string) ([]byte, error) {
 	return bytes, nil
 }
 
-func (a *Api) CacheEntry(cacheId string, data []byte) error {
+func (a *Api) CacheEntry(cacheId string, data []byte, expiresInSeconds int) error {
 	key := "cache:" + cacheId
 	
 	redisConn := a.redisPool.Get()
 	defer redisConn.Close()
-	
-	_, err := redisConn.Do("SET", key, data)
+
+	_, err := redisConn.Do("SETEX", key, expiresInSeconds, data)
 	return err
+}
+
+func (a *Api) GetCacheEntries() ([]string, error) {
+	redisConn := a.redisPool.Get()
+	defer redisConn.Close()
+
+	cacheEntries := []string{}
+
+	key := "cache:*"
+
+	res, err := redis.Strings(redisConn.Do("KEYS", key))
+	if err != nil {
+		if err == redis.ErrNil {
+			return []string{}, nil 
+		}
+
+		return []string{}, &InternalServerError{Description: "Couldn't get keys: " + err.Error()}
+	}
+
+	for _, elem := range res {
+		cacheEntry := strings.TrimPrefix(elem, "cache:")
+		cacheEntries = append(cacheEntries, cacheEntry)
+	}
+
+
+	return cacheEntries, nil
 }

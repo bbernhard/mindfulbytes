@@ -151,6 +151,7 @@ func main() {
 		cacheGroup := v1.Group("/cache")
 		{
 			cacheGroup.GET("/:cacheid", requestHandler.GetCachedEntry)
+			cacheGroup.GET("", requestHandler.GetCacheEntries)
 		}
 	}
 
