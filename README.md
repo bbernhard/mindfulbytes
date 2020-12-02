@@ -101,13 +101,36 @@ The REST API Swagger documentation is available at `http://127.0.0.1:8088/swagge
 
 * Add a caption to the image
 
-```http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}```
+```curl -X GET http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}```
 
 ![Today Or Random With Caption](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/today-or-random-caption.jpeg)
 
 * Format image (for EPaper displays)
 
-```http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}&format=bmp&mode=grayscale```
+```curl -X GET http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}&format=bmp&mode=grayscale```
 
 ![Today Or Random For EPaper](https://github.com/bbernhard/mindfulbytes/raw/master/docs/imgs/today-or-random-epaper.bmp)
 
+* Cache Images
+When an image is requested, the request gets delegated to the appropriate plugin which fetches the image. Then, the image will be scaled, labeled, etc.
+before it will be served. This process can take quite a bit of time.
+
+If you are running a battery powered device (e.g a microcontroller with an E-Paper display), you usually want to spend as much time as possible sleeping and 
+only wake up the device for a short amount of time to maxime the battery life. In order to avoid waiting several seconds for the image processing, it's possible
+to send a caching request to the backend to cache the image for x seconds in memory. 
+
+A typical workflow for a battery powered microcontroller could e.g look like this:
+
+<wake up from deep sleep>
+<send image cache request>
+
+```curl -X POST -H "Content-Type: application/json" -d '{"urlpath":"/v1/topics/imgreader/images/today-or-random?size=200x200", "expires": 1800}' http://127.0.0.1:8085/v1/cache```
+
+<the backend immediately returns a Cache-ID and asynchronously adds the image to the in-memory cache>
+<deep sleep again for a 30 seconds to make sure that the image is in the cache>
+<wake up from cache and request the image from the cache>
+
+
+```curl -X GET http://127.0.0.1:8085/v1/cache/<cacheid>```
+
+With the `expires` parameter it's possible to specify the duration (in seconds) the image will be kept in the in-memory cache. 
