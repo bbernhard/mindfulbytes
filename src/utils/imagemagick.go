@@ -14,6 +14,9 @@ type ConvertOptions struct {
 	Caption string
 	Grayscale bool
 	Format string
+	Extent bool
+	BackgroundColor string
+	TextColor string
 }
 
 
@@ -91,16 +94,22 @@ func (w *ImageMagickWrapper) Convert(inPath string, outFilename string, convertO
 	if convertOptions.Grayscale {
 		args = append(args, []string{"+dither", "-depth", "24", "-colorspace", "Gray"}...)
 	}
+	
+	if convertOptions.BackgroundColor != "" {
+		args = append(args, []string{"-background", convertOptions.BackgroundColor}...)
+	}
 
 	if convertOptions.Caption != "" {
 		//scale pointsize to half of 1/10 of the image height (-pointsize %[fx:h*(1/10)/2])
 		//draw black rectangle with 10% height
 		//offset y text position by 1/4 of image height
-		args = append(args, []string{"-pointsize", "%[fx:h*(1/10)/2]", "-gravity", "South", "-background", "black", "-fill", 
-			"white", "-splice", "0x10%", "-annotate", "+0+%[fx:h*(1/10)/4]", convertOptions.Caption}...)
+		args = append(args, []string{"-pointsize", "%[fx:h*(1/10)/2]", "-gravity", "South", "-background", convertOptions.BackgroundColor, "-fill", 
+			convertOptions.TextColor, "-splice", "0x10%", "-annotate", "+0+%[fx:h*(1/10)/4]", convertOptions.Caption}...)
 	}
 
-	if convertOptions.Size != "" {
+	if convertOptions.Extent && convertOptions.Size != "" {
+		args = append(args, []string{"-thumbnail", convertOptions.Size, "-gravity", "center", "-extent", convertOptions.Size}...)
+	} else if convertOptions.Size != "" {
 		args = append(args, "-resize")
 		args = append(args, convertOptions.Size)
 	}

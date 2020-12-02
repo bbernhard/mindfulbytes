@@ -51,6 +51,15 @@ func parseGetImageRequest(c *gin.Context, apiClient *Api, plugins []string, imag
 		}
 	}
 
+	extent := false
+	if c.DefaultQuery("extent", "false") == "true" {
+		extent = true
+	}
+
+	textColor := c.DefaultQuery("textcolor", "white")
+
+	backgroundColor := c.DefaultQuery("backgroundcolor", "")
+
 	format := c.DefaultQuery("format", "jpg")
 	language := c.DefaultQuery("language", "en")
 
@@ -125,7 +134,8 @@ func parseGetImageRequest(c *gin.Context, apiClient *Api, plugins []string, imag
 		return "", "", utils.ConvertOptions{}, &ImageFetchError{StatusCode: 404, Description: "No plugin specified"}
 	}
 
-	convertOptions := utils.ConvertOptions{Size: size, Caption: caption, Grayscale: grayscale, Format: format}
+	convertOptions := utils.ConvertOptions{Size: size, Caption: caption, Grayscale: grayscale, 
+			Format: format, Extent: extent, BackgroundColor: backgroundColor, TextColor: textColor}
 	return plugin, imageId, convertOptions, nil
 }
 
