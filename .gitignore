@@ -1,8 +1,7 @@
-src/pluginrunner
 src/web
 src/plugins/imgreader-nc/main
 config
 env/docker/docker-compose.yml
 src/restapi
-src/pluginrunner
+src/crawler
 src/notifier

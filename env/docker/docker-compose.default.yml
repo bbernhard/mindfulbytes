@@ -40,12 +40,12 @@ services:
      - ../../config:/home/mindfulbytes/config
 
   
-  pluginrunner:
-   hostname: pluginrunner
+  crawler:
+   hostname: crawler
    environment: *globalenv
    build:
      context: "../../"
-     dockerfile: env/docker/Dockerfile.pluginrunner
+     dockerfile: env/docker/Dockerfile.crawler
    volumes:
      - ../../config:/home/mindfulbytes/config
      - /tmp/images/:/images:ro #mounts the /tmp/images folder on the host system to /pictures in the docker container. change the /tmp/images folder accordingly.
