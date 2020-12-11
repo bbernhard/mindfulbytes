@@ -13,9 +13,9 @@
   <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
   <script src="./js/typewriterjs/core.min.js"></script>
   <script src="./js/aosjs/aos.js"></script>
+  <script src="./js/jquery/jquery.min.js"></script>
   <script src="./js/mindfulbytes.js"></script>
-  <link href="./css/mindfulbytes.css" rel="stylesheet"/>
-
+  <link href="./css/mindfulbytes.css" rel="stylesheet"/> 
 </head>
 
 <body>
@@ -175,7 +175,7 @@
               Example 
             </h1>
             <h2 class="subtitle subtitled">
-			  Get an image that was taken at this day, x years ago or return an random image if no image was found.
+			  Get an image that was taken at this day, x years ago or return a random image if no image was found.
               <div class="block"><pre>curl -X GET http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}</pre></div>
             </h2>
           </div>
@@ -204,8 +204,16 @@
               <span id="typewriter"></span>
             </h1>
             <h2 class="subtitle subtitled">
-              <figure class="image is-5by4">
+              <figure class="image is-5by4" id="picture-frame-img">
 			    <img src="./docs/imgs/picture_frame.jpg">
+			  </figure>
+
+			  <figure class="image is-1by1 is-hidden" id="signal-notification-img">
+			    <img src="./docs/imgs/signal_notification2.png">
+			  </figure>
+
+			  <figure class="image is-3by2 is-hidden" id="tablet-img">
+			    <img src="./docs/imgs/tablet2.jpeg">
 			  </figure>
 			</h2>
           </div>
