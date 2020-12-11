@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mindfulbytes</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.1/css/bulma.min.css">
+  <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+    integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+  <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+  <script src="./js/typewriterjs/core.min.js"></script>
+  <script src="./js/aosjs/aos.js"></script>
+  <script src="./js/mindfulbytes.js"></script>
+  <link href="./css/mindfulbytes.css" rel="stylesheet"/>
+
+</head>
+
+<body>
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <!--<div class="navbar-brand">
+      <<a class="navbar-item" href="https://bulma.io">
+        <img src="https://bulma.io/images/bulma-logo.png" width="112" height="28">
+      </a>
+    </div>-->
+
+    <div class="navbar-menu">
+
+      <div class="navbar-end">
+        <a class="navbar-item">
+          <button class="button">
+            <span class="icon">
+              <i class="fab fa-github"></i>
+            </span>
+            <span>GitHub</span>
+          </button>
+        </a>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero del producto -->
+  <section class="hero is-white is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+        <div class="columns  is-vcentered reverse-columns">
+          <div class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-5-desktop is-offset-1-desktop
+          is-5-widescreen is-offset-1-widescreen
+          is-5-fullhd is-offset-1-fullhd" data-aos="fade-down">
+            <h1 class="title titled is-1 mb-6">
+              mindfulbytes - an API to the past
+            </h1>
+            <h2 class=" subtitled subtitle has-text-grey is-4 has-text-weight-normal is-family-sans-serif">
+              Remember what happened today - x years ago.
+            </h2>
+            <div class="buttons">
+              <a class="button is-black" href="https://github.com/bbernhard/mindfulbytes">Get it</a>
+            </div>
+          </div>
+          <div data-aos="fade-right" class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-4-desktop is-offset-1-desktop
+          is-4-widescreen is-offset-1-widescreen
+          is-4-fullhd is-offset-1-fullhd">
+            <figure class="image is-square">
+              <img src="./docs/imgs/api.jpg">
+            </figure>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero is-white is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+        <div class="columns  is-vcentered reverse-columns">
+          <div data-aos="fade-right" class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-5-desktop is-offset-1-desktop
+          is-5-widescreen is-offset-1-widescreen
+          is-5-fullhd is-offset-1-fullhd">
+            <h1 class="title titled is-1 mb-6">
+              Index your digital assets
+			</h1>
+            <h2 class="subtitle subtitled">
+			  Index all images in your local and remote (e.g Nextcloud) folders by EXIF date. 
+            </h2>
+          </div>
+          <div data-aos="fade-down" class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-4-desktop is-offset-1-desktop
+          is-4-widescreen is-offset-1-widescreen
+          is-4-fullhd is-offset-1-fullhd" data-aos="fade-up">
+            <figure class="image is-square">
+              <img src="./docs/imgs/search.jpg">
+            </figure>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero is-white is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+        <div class="columns  is-vcentered">
+          <div data-aos="fade-left" class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-4-desktop is-offset-1-desktop
+          is-4-widescreen is-offset-1-widescreen
+          is-4-fullhd is-offset-1-fullhd">
+            <figure class="image is-square">
+              <img src="./docs/imgs/explore.jpg">
+            </figure>
+          </div>
+          <div data-aos="fade-down" class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-5-desktop is-offset-1-desktop
+          is-5-widescreen is-offset-1-widescreen
+          is-5-fullhd is-offset-1-fullhd">
+            <h1 class="titled title is-1 mb-6">
+              Features
+            </h1>
+            <h2 class="subtitled subtitle">
+              <p class="has-text-centered-mobile">
+                <i class="fa fa-check" aria-hidden="true" style="color: #72ddf7;"></i>
+                  Easy to extend with plugins
+                </p>
+		        <i class="fa fa-check" aria-hidden="true" style="color: #72ddf7;"></i>
+                  Fully dockerized
+                </p>
+				<i class="fa fa-check" aria-hidden="true" style="color: #72ddf7;"></i>
+                  Powerful REST API
+                </p>
+				<i class="fa fa-check" aria-hidden="true" style="color: #72ddf7;"></i>
+                  Built-in Signal Messenger & Email notifications
+                </p>
+                <i class="fa fa-check" aria-hidden="true" style="color: #72ddf7;"></i>
+                  100% Open Source
+                </p>
+            </h2>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero is-white is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+        <div class="columns  is-vcentered reverse-columns">
+          <div data-aos="fade-right" class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-5-desktop is-offset-1-desktop
+          is-5-widescreen is-offset-1-widescreen
+          is-5-fullhd is-offset-1-fullhd">
+            <h1 class="title titled is-1 mb-6">
+              Example 
+            </h1>
+            <h2 class="subtitle subtitled">
+			  Get an image that was taken at this day, x years ago or return an random image if no image was found.
+              <div class="block"><pre>curl -X GET http://127.0.0.1:8085/v1/topics/imgreader/images/today-or-random?caption=This%20image%20was%20created%20{{timeago}}</pre></div>
+            </h2>
+          </div>
+          <div data-aos="fade-down" class="column
+          is-10-mobile is-offset-1-mobile
+          is-10-tablet is-offset-1-tablet
+          is-4-desktop is-offset-1-desktop
+          is-4-widescreen is-offset-1-widescreen
+          is-4-fullhd is-offset-1-fullhd" data-aos="fade-up">
+            <figure class="image is-square">
+              <img src="./docs/imgs/today-or-random-caption.jpeg">
+            </figure>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero is-medium has-text-centered">
+    <div class="hero-body">
+      <div class="container">
+        <div class="columns is-centered"> 
+		  <div data-aos="zoom-in-up" class="column is-8">
+            <h1 class="title titled is-1 mb-6">
+              <span id="typewriter"></span>
+            </h1>
+            <h2 class="subtitle subtitled">
+              <figure class="image is-5by4">
+			    <img src="./docs/imgs/picture_frame.jpg">
+			  </figure>
+			</h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+
+</html>
