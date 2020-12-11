@@ -4,7 +4,7 @@ RUN useradd -ms /bin/bash mindfulbytes
 
 RUN mkdir -p /home/mindfulbytes/bin/plugins
 
-RUN apt-get update && apt-get install -y python3 python3-pip
+RUN apt-get update && apt-get install -y python3 python3-pip zlib1g-dev libjpeg-dev
 
 RUN pip3 install Pillow redis
 
