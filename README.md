@@ -2,7 +2,7 @@
 
 We are living in stressful times. With all the digital content online and social networks and smartphones that are constantly begging for our attention, it's easy to lose yourself in the digital world. What we are missing is, that life happens right in front of us.
 
-MindfulBytes is a plugin based application that scans your digital assets and lets you know what has happened at this day x years ago. It does that by looking at the creation timestamp (or in case of pictures by parsing the EXIF timestamp).
+MindfulBytes is a plugin based application that scans your digital assets and lets you know what has happened at this day x years ago. It does that by looking at the creation timestamp (and in case of pictures by parsing the EXIF timestamp).
 
 ## Features
 
