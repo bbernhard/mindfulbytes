@@ -88,7 +88,7 @@ Use the built-in notification support to receive your daily mindful bytes via Si
 
 # REST API
 
-The REST API Swagger documentation is available at `http://127.0.0.1:8088/swagger/index.html` 
+The REST API Swagger documentation is available [here](https://mindfulbytes.io/html/swagger.html)
 
 ## Examples
 
