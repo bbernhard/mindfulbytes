@@ -1,6 +1,6 @@
 # MindfulBytes
 
-We are living in stressful times. With all the digital content online and social networks and smartphones that are constantly begging for our attention, it's easy to lose yourself in the digital world. What we are missing is, that life happens right in front of us.
+We are living in stressful times. With all the digital content online and social networks and smartphones that are constantly begging for our attention, it's easy to lose yourself in the digital world.
 
 MindfulBytes is a plugin based application that scans your digital assets and lets you know what has happened at this day x years ago. It does that by looking at the creation timestamp (and in case of pictures by parsing the EXIF timestamp).
 
@@ -88,7 +88,7 @@ Use the built-in notification support to receive your daily mindful bytes via Si
 
 # REST API
 
-The REST API Swagger documentation is available at `http://127.0.0.1:8088/swagger/index.html` 
+The REST API Swagger documentation is available [here](https://mindfulbytes.io/html/swagger.html)
 
 ## Examples
 
