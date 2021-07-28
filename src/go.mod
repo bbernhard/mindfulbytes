@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/ararog/timeago v0.0.0-20160328174124-e9969cf18b8d // indirect
 	github.com/gabriel-vasile/mimetype v1.1.2
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.7.0
 	github.com/go-cmd/cmd v1.2.1
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/gofrs/uuid v3.3.0+incompatible
